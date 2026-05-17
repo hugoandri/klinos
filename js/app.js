@@ -36,6 +36,7 @@
     const username = document.getElementById('login-user').value.trim();
     const password = document.getElementById('login-pass').value.trim();
     const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
     try {
       const res = await fetch(API + '/auth/login', {
         method: 'POST',
