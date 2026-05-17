@@ -762,24 +762,80 @@
     // Fetch session info to display patient name
     const terapeutaName = currentUser.nombre;
     get('/klinos/sesiones/terapeuta/by-name/' + encodeURIComponent(terapeutaName)).then(ss => {
-      const s = Array.isArray(ss) ? ss.find(x => x.id === citaId) : null;
+      const allSessions = Array.isArray(ss) ? ss : [];
+      const s = allSessions.find(x => x.id === citaId);
       if (s) {
         document.getElementById('sw-paciente').textContent = s.paciente;
         document.getElementById('sw-info').textContent = s.tipo_sesion + ' · ' + s.sala + ' · ' + s.hora;
-        // Load patient summary
-        get('/pacientes').then(all =>
-          all.find(p => p.nombre === s.paciente)
-        ).then(p => {
-          if (p) {
-            const el = document.getElementById('sw-paciente-info');
-            document.getElementById('sw-paciente-detalle').innerHTML =
-              (p.diagnostico ? '<span><strong>Dx:</strong> ' + p.diagnostico + '</span>' : '')
-              + (p.edad ? ' · <span><strong>' + p.edad + ' años</strong></span>' : '')
-              + (p.sesiones_total ? ' · <span><strong>' + p.sesiones_total + ' sesiones</strong></span>' : '')
-              + (p.rut ? ' · <span>' + p.rut + '</span>' : '');
-            el.style.display = 'block';
-          }
-        });
+        // Load patient ficha, patterns, and history
+        const pacienteId = s.paciente_id;
+        if (pacienteId) {
+          Promise.all([
+            get('/pacientes/' + pacienteId),
+            get('/klinos/patrones/' + pacienteId),
+            get('/klinos/historial/' + pacienteId),
+          ]).then(([paciente, patrones, historial]) => {
+            // Ficha del paciente
+            const detalleEl = document.getElementById('sw-paciente-detalle');
+            detalleEl.innerHTML = `
+              <div class="flex-col gap-6">
+                <div class="flex-center gap-10">
+                  <div class="av av-md av-sage">${initials(paciente.nombre)}</div>
+                  <div>
+                    <div class="fs-14 fw-500">${paciente.nombre}</div>
+                    <div class="fs-11 text-3">${paciente.rut || '—'} · ${paciente.edad} años · ${paciente.sesiones_total} sesiones</div>
+                  </div>
+                </div>
+                <div class="flex gap-6 flex-wrap">
+                  ${paciente.diagnostico ? `<span class="badge badge-blue">${paciente.diagnostico}</span>` : ''}
+                  <span class="badge ${paciente.status === 'Trabajo activo' ? 'badge-green' : 'badge-gray'}">${paciente.status}</span>
+                </div>
+                ${patrones.length > 0 ? `
+                  <div class="divider"></div>
+                  <div class="fs-11 fw-500 text-2 mb-3">Patrones detectados por Klinós IA:</div>
+                  <div class="flex gap-4 flex-wrap">${patrones.map(pat => `<span class="chip">${pat.patron} (x${pat.frecuencia})</span>`).join('')}</div>
+                ` : ''}
+              </div>
+            `;
+            document.getElementById('sw-paciente-info').style.display = 'block';
+
+            // Sesiones anteriores con análisis IA
+            const prevSessions = allSessions.filter(x => x.paciente_id === pacienteId && x.registro_id && x.registro_id !== s.registro_id);
+            const prevEl = document.getElementById('sw-sesiones-previas-lista');
+            if (prevSessions.length > 0 || historial.length > 0) {
+              let html = '';
+              prevSessions.forEach(ps => {
+                const estadoCls = ps.sesion_estado === 'cerrada' ? '' : '';
+                const intensidadMap = { baja: 'Baja', media: 'Media', alta: 'Alta' };
+                const intensidadBadge = ps.analisis
+                  ? `<span class="ses-intensidad ${ps.intensidad || 'media'}">${intensidadMap[ps.intensidad] || '—'}</span>`
+                  : '';
+                html += `
+                  <div class="t-line">
+                    <div class="t-dot"></div>
+                    <span class="t-date">${ps.fecha} ${ps.hora}</span>
+                    <div class="flex-1">
+                      <div class="fs-11 text-2">${ps.tipo_sesion}</div>
+                      ${ps.analisis ? `<div class="fs-10 text-3 mt-2">${ps.analisis}</div>` : ''}
+                    </div>
+                    ${intensidadBadge}
+                  </div>
+                `;
+              });
+              historial.forEach(h => {
+                html += `
+                  <div class="t-line">
+                    <div class="t-dot"></div>
+                    <span class="t-date">${h.fecha}</span>
+                    <span class="text-2">${h.contenido}</span>
+                  </div>
+                `;
+              });
+              prevEl.innerHTML = html;
+              document.getElementById('sw-sesiones-previas').style.display = 'block';
+            }
+          }).catch(e => console.error(e));
+        }
       }
     });
 

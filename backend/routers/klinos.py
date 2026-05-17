@@ -133,6 +133,8 @@ def sesiones_por_terapeuta(terapeuta_id: int, db: Session = Depends(get_db)):
             "estado": c.estado,
             "sesion_estado": reg.estado if reg else "pendiente",
             "registro_id": reg.id if reg else None,
+            "analisis": reg.analisis if reg else None,
+            "intensidad": reg.intensidad if reg else None,
         })
     return result
 
