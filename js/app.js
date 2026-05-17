@@ -524,8 +524,9 @@
       // Populate chat paciente selector
       const select = document.getElementById('chat-paciente');
       if (select) {
-        select.innerHTML = '<option value="0">Sin contexto de paciente</option>' +
-          pacientes.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+        const allOpts = pacientes.map(p => `<option value="${p.id}" data-search="${(p.nombre + ' ' + (p.rut || '')).toLowerCase()}">${p.nombre} ${p.rut ? `<${p.rut}>` : ''}</option>`).join('');
+        select.innerHTML = '<option value="0" data-search="">Sin contexto de paciente</option>' + allOpts;
+        filterPacientes();
       }
     } catch (e) { console.error(e); }
   }
@@ -1371,6 +1372,42 @@
   };
 
   // ─── Groq / Klinós Chat ───
+  window.filterPacientes = function () {
+    const q = (document.getElementById('chat-paciente-search').value || '').toLowerCase();
+    const select = document.getElementById('chat-paciente');
+    Array.from(select.options).forEach(opt => {
+      const match = (opt.dataset.search || '').includes(q);
+      opt.style.display = match ? '' : 'none';
+    });
+    if (select.selectedOptions[0]?.style.display === 'none') {
+      select.value = '0';
+    }
+  };
+
+  window.downloadXLSX = function (msgId) {
+    const el = document.getElementById(msgId);
+    if (!el) return;
+    const text = el.textContent.replace('📊 XLSX📄 DOCX', '').trim();
+    const lines = text.split('\n').filter(Boolean);
+    const data = lines.map(l => [l]);
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Klinós');
+    XLSX.writeFile(wb, 'klinos-respuesta.xlsx');
+  };
+
+  window.downloadDOCX = function (msgId) {
+    const el = document.getElementById(msgId);
+    if (!el) return;
+    const text = el.innerHTML.replace(/<button[\s\S]*?<\/button>/g, '').replace(/<br>/g, '\n').replace(/<[^>]*>/g, '').trim();
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:'Calibri',sans-serif;font-size:12pt;line-height:1.5;padding:30px}table{border-collapse:collapse;width:100%;margin:12px 0}td,th{border:1px solid #ccc;padding:6px 10px}th{background:#f0f0f0}ul{margin:6px 0}</style></head><body>${text.replace(/\n/g, '<br>')}</body></html>`;
+    const blob = new Blob([html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'klinos-respuesta.doc';
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   window.sendKlinosChat = async function () {
     const input = document.getElementById('chat-input');
     const msg = input.value.trim();
@@ -1387,7 +1424,8 @@
     try {
       const res = await post('/klinos/chat', { message: msg, paciente_id: pacienteId });
       log.querySelector('.chat-loading')?.remove();
-      log.innerHTML += `<div class="chat-msg chat-ai"><strong>Klinós IA:</strong> ${res.reply}</div>`;
+      const msgId = 'chat-' + Date.now();
+      log.innerHTML += `<div class="chat-msg chat-ai" id="${msgId}"><strong>Klinós IA:</strong> ${res.reply}<br><div class="flex gap-4 mt-6"><button class="btn-outline btn-sm" onclick="downloadXLSX('${msgId}')">📊 XLSX</button><button class="btn-outline btn-sm" onclick="downloadDOCX('${msgId}')">📄 DOCX</button></div></div>`;
       log.scrollTop = log.scrollHeight;
     } catch (e) {
       log.querySelector('.chat-loading')?.remove();

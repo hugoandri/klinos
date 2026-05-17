@@ -6,6 +6,7 @@
   <title>Launchpad + Klinós — Plataforma Clínica</title>
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <!-- ═══════════ LOGIN OVERLAY ═══════════ -->
@@ -340,15 +341,16 @@
             <div class="card-pad" style="border-bottom:1px solid var(--border)">
               <div class="flex-between">
                 <div class="card-title" style="margin:0">Klinós IA — Asistente Clínico</div>
-                <div class="flex-center gap-6">
-                  <select id="chat-paciente" style="width:180px;font-size:11px" onchange="">
+                <div class="flex-col gap-3">
+                  <input id="chat-paciente-search" type="text" placeholder="Buscar paciente..." style="width:200px;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);outline:none" oninput="filterPacientes()">
+                  <select id="chat-paciente" style="width:200px;font-size:11px">
                     <option value="0">Sin contexto de paciente</option>
                   </select>
                 </div>
               </div>
             </div>
             <div class="chat-log" id="chat-log">
-              <div class="chat-msg chat-ai"><strong>Klinós IA:</strong> ¡Hola! Soy tu asistente clínico. Puedo ayudarte a reflexionar sobre casos, sugerir intervenciones, o analizar patrones. Selecciona un paciente arriba para contextualizar la conversación.</div>
+              <div class="chat-msg chat-ai" id="chat-welcome"><strong>Klinós IA:</strong> ¡Hola! Soy tu asistente clínico. Puedo ayudarte a reflexionar sobre casos, sugerir intervenciones, o analizar patrones. Selecciona un paciente arriba para contextualizar la conversación.</div>
             </div>
             <div class="chat-input-wrap">
               <input type="text" id="chat-input" placeholder="Escribe tu consulta clínica..." onkeydown="if(event.key==='Enter')sendKlinosChat()">
