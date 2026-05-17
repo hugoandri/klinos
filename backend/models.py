@@ -214,6 +214,8 @@ class RegistroSesion(Base):
     cita_id: Mapped[int] = mapped_column(Integer, index=True)
     notas: Mapped[str] = mapped_column(Text, default="")
     analisis: Mapped[str] = mapped_column(Text, default="")
+    recomendaciones: Mapped[str] = mapped_column(Text, default="")
+    patologias: Mapped[str] = mapped_column(Text, default="")
     intensidad: Mapped[str] = mapped_column(String(50), default="")
     estado: Mapped[str] = mapped_column(String(20), default="pendiente")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

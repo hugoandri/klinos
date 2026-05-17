@@ -200,21 +200,43 @@ def cerrar_sesion(registro_id: int, db: Session = Depends(get_db)):
                 completion = client.chat.completions.create(
                     model="mixtral-8x7b-32768",
                     messages=[
-                        {"role": "system", "content": "Eres un analista clínico. Analiza las notas de sesión de un terapeuta y proporciona: 1) Un breve resumen/conclusión de la sesión (2-3 líneas). 2) Una calificación de intensidad para el TERAPEUTA (baja, media, alta) basada en el contenido emocional y la complejidad del caso. Responde solo con el análisis en formato: CONCLUSIÓN: ... | INTENSIDAD: baja|media|alta"},
+                        {"role": "system", "content": "Eres un analista clínico. Analiza las notas de sesión de un terapeuta y proporciona: 1) Un breve resumen/conclusión de la sesión (2-3 líneas). 2) Una calificación de intensidad para el TERAPEUTA (baja, media, alta) basada en el contenido emocional y la complejidad del caso. 3) Una lista de recomendaciones clínicas específicas para las próximas sesiones. 4) Una lista de posibles patologías o problemas psicológicos que podrían estar presentes basada en las notas. Responde SOLO con el siguiente formato exacto:\n\nCONCLUSIÓN: ...\nINTENSIDAD: baja|media|alta\nRECOMENDACIONES:\n- ...\n- ...\nPATOLOGÍAS POSIBLES:\n- ...\n- ..."},
                         {"role": "user", "content": f"Notas de la sesión:\n{reg.notas}"},
                     ],
-                    max_tokens=512,
+                    max_tokens=1024,
                     temperature=0.5,
                 )
                 respuesta = completion.choices[0].message.content or ""
-                if "|" in respuesta:
-                    partes = respuesta.split("|")
-                    reg.analisis = partes[0].replace("CONCLUSIÓN:", "").strip()
-                    intensidad_raw = partes[1].replace("INTENSIDAD:", "").strip().lower()
-                    reg.intensidad = intensidad_raw if intensidad_raw in ("baja", "media", "alta") else "media"
-                else:
-                    reg.analisis = respuesta
+                # Parse sections
+                lines = respuesta.split("\n")
+                current_section = None
+                conclusion_parts = []
+                for line in lines:
+                    stripped = line.strip()
+                    if stripped.upper().startswith("CONCLUSIÓN:"):
+                        current_section = "conclusion"
+                        conclusion_parts.append(stripped.replace("CONCLUSIÓN:", "", 1).strip())
+                    elif stripped.upper().startswith("INTENSIDAD:"):
+                        current_section = "intensidad"
+                        raw = stripped.replace("INTENSIDAD:", "", 1).strip().lower()
+                        reg.intensidad = raw if raw in ("baja", "media", "alta") else "media"
+                    elif stripped.upper().startswith("RECOMENDACIONES"):
+                        current_section = "recomendaciones"
+                        reg.recomendaciones = ""
+                    elif stripped.upper().startswith("PATOLOGÍAS") or stripped.upper().startswith("PATOLOGIAS"):
+                        current_section = "patologias"
+                        reg.patologias = ""
+                    elif current_section == "conclusion":
+                        conclusion_parts.append(stripped)
+                    elif current_section == "recomendaciones" and stripped.startswith("-"):
+                        reg.recomendaciones += stripped + "\n"
+                    elif current_section == "patologias" and stripped.startswith("-"):
+                        reg.patologias += stripped + "\n"
+                reg.analisis = " ".join(conclusion_parts).strip()
+                if not reg.intensidad:
                     reg.intensidad = "media"
+                reg.recomendaciones = reg.recomendaciones.strip()
+                reg.patologias = reg.patologias.strip()
             except Exception:
                 reg.analisis = "No se pudo analizar la sesión."
                 reg.intensidad = "media"

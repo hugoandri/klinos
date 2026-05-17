@@ -286,6 +286,8 @@ class RegistroSesionOut(BaseModel):
     cita_id: int
     notas: str = ""
     analisis: str = ""
+    recomendaciones: str = ""
+    patologias: str = ""
     intensidad: str = ""
     estado: str = "pendiente"
     created_at: datetime | None = None

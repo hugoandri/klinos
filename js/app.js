@@ -770,8 +770,12 @@
           get('/klinos/patrones/' + pacienteId),
           get('/klinos/historial/' + pacienteId),
           get('/klinos/sesiones/terapeuta/' + cita.terapeuta_id),
-        ]).then(([paciente, patrones, historial, allSessions]) => {
+          get('/citas'),
+        ]).then(([paciente, patrones, historial, allSessions, todasCitas]) => {
           const sessions = Array.isArray(allSessions) ? allSessions : [];
+          const citas = Array.isArray(todasCitas) ? todasCitas : [];
+          // Próximas sesiones del paciente
+          const upcoming = citas.filter(c => c.paciente_id === pacienteId && c.estado !== 'completada' && c.estado !== 'cancelada' && c.id !== citaId);
           // Ficha del paciente
           const detalleEl = document.getElementById('sw-paciente-detalle');
           detalleEl.innerHTML = `
@@ -791,6 +795,17 @@
                 <div class="divider"></div>
                 <div class="fs-11 fw-500 text-2 mb-3">Patrones detectados por Klinós IA:</div>
                 <div class="flex gap-4 flex-wrap">${patrones.map(pat => `<span class="chip">${pat.patron} (x${pat.frecuencia})</span>`).join('')}</div>
+              ` : ''}
+              ${upcoming.length > 0 ? `
+                <div class="divider"></div>
+                <div class="fs-11 fw-500 text-2 mb-3">Próximas sesiones</div>
+                <div class="flex-col gap-4">${upcoming.map(u => `
+                  <div class="flex-center gap-8 fs-11">
+                    <span class="badge badge-green">${u.fecha} ${u.hora}</span>
+                    <span class="text-2">${u.tipo_sesion}</span>
+                    <span class="text-3">${u.sala}</span>
+                  </div>
+                `).join('')}</div>
               ` : ''}
             </div>
           `;
@@ -870,16 +885,29 @@
       document.getElementById('sesion-writing').style.display = 'none';
       document.getElementById('sesion-analisis').style.display = 'flex';
       const intensidadMap = { baja: 'Baja', media: 'Media', alta: 'Alta' };
+      function fmtList(text) {
+        return text.split('\n').map(r => r.trim()).filter(Boolean).map(r => r.replace(/^-\s*/, ''));
+      }
       document.getElementById('analisis-content').innerHTML = `
         <div class="alert alert-sage mb-10">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L15 14H1L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
           <span><strong>Análisis completado</strong></span>
         </div>
         <div class="fs-12 lh-18 mb-10">${res.analisis || 'No se generó análisis.'}</div>
-        <div class="flex-center gap-10">
+        <div class="flex-center gap-10 mb-10">
           <span class="fs-11 text-3">Intensidad para el terapeuta:</span>
           <span class="ses-intensidad ${res.intensidad || 'media'}">${intensidadMap[res.intensidad] || 'Media'}</span>
         </div>
+        ${res.recomendaciones ? `
+          <div class="divider mb-8"></div>
+          <div class="fs-12 fw-600 mb-6">Recomendaciones clínicas</div>
+          <div class="fs-11 lh-18 text-2">${fmtList(res.recomendaciones).map(r => `<div class="flex gap-6 mb-3"><span style="color:var(--green)">→</span><span>${r}</span></div>`).join('')}</div>
+        ` : ''}
+        ${res.patologias ? `
+          <div class="divider mb-8"></div>
+          <div class="fs-12 fw-600 mb-6">Posibles patologías / problemas psicológicos</div>
+          <div class="flex gap-4 flex-wrap">${fmtList(res.patologias).map(r => `<span class="badge badge-amber">${r}</span>`).join('')}</div>
+        ` : ''}
       `;
       sesionActualId = null;
     } catch (e) {
