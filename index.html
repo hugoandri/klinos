@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <!-- ═══════════ LOGIN OVERLAY ═══════════ -->
@@ -338,9 +339,12 @@
 
           <!-- Chat Klinós IA -->
           <div class="card">
-            <div class="card-pad" style="border-bottom:1px solid var(--border)">
+            <div class="card-pad" style="border-bottom:1px solid var(--border);padding:10px 16px">
               <div class="flex-between">
-                <div class="card-title" style="margin:0">Klinós IA — Asistente Clínico</div>
+                <div class="flex-center gap-8">
+                  <div class="card-title" style="margin:0;font-size:13px">Klinós IA — Asistente Clínico</div>
+                  <button class="btn-outline btn-sm" onclick="mostrarGraficoIntensidad()" title="Gráfico de intensidad por sesión">📊 Intensidad</button>
+                </div>
                 <div style="position:relative;width:200px">
                   <input id="chat-paciente-input" type="text" placeholder="Buscar paciente..." style="width:100%;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);outline:none" oninput="filterPacientes()" autocomplete="off">
                   <select id="chat-paciente" style="display:none">
@@ -348,6 +352,9 @@
                   </select>
                 </div>
               </div>
+            </div>
+            <div id="grafico-intensidad" style="display:none;padding:14px 16px;border-bottom:1px solid var(--border)">
+              <canvas id="chart-intensidad" style="width:100%;height:200px"></canvas>
             </div>
             <div class="chat-log" id="chat-log">
               <div class="chat-msg chat-ai" id="chat-welcome"><strong>Klinós IA:</strong> ¡Hola! Soy tu asistente clínico. Puedo ayudarte a reflexionar sobre casos, sugerir intervenciones, o analizar patrones. Selecciona un paciente arriba para contextualizar la conversación.</div>

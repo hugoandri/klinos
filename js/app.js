@@ -1439,6 +1439,69 @@
     a.click(); URL.revokeObjectURL(url);
   };
 
+  window.mostrarGraficoIntensidad = async function () {
+    const container = document.getElementById('grafico-intensidad');
+    if (!container) return;
+    const visible = container.style.display !== 'none';
+    if (visible) { container.style.display = 'none'; return; }
+    container.style.display = 'block';
+    const canvas = document.getElementById('chart-intensidad');
+    if (!canvas) return;
+    try {
+      const terapeutas = await get('/terapeutas');
+      const allSessions = [];
+      for (const t of terapeutas) {
+        const ss = await get('/klinos/sesiones/terapeuta/' + t.id);
+        allSessions.push(...ss);
+      }
+      const closed = allSessions.filter(s => s.intensidad && s.sesion_estado === 'cerrada');
+      if (closed.length === 0) {
+        container.innerHTML = '<div class="fs-11 text-3 text-center" style="padding:20px">Sin sesiones cerradas con intensidad registrada.</div>';
+        return;
+      }
+      const intensidadNum = { baja: 1, media: 2, alta: 3 };
+      const labels = closed.map(s => s.fecha + ' ' + s.hora);
+      const data = closed.map(s => intensidadNum[s.intensidad] || 0);
+      const colors = closed.map(s => s.intensidad === 'alta' ? '#D46A7E' : s.intensidad === 'media' ? '#E8A84C' : '#4AB88A');
+      if (window._intensidadChart) window._intensidadChart.destroy();
+      window._intensidadChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Intensidad',
+            data,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ['Baja', 'Media', 'Alta'][ctx.raw - 1] || '—'
+              }
+            }
+          },
+          scales: {
+            y: {
+              min: 0, max: 3.5,
+              ticks: { stepSize: 1, callback: v => ['', 'Baja', 'Media', 'Alta'][v] || '' }
+            },
+            x: { ticks: { maxRotation: 45, font: { size: 10 } } }
+          }
+        }
+      });
+    } catch (e) {
+      container.innerHTML = '<div class="fs-11 text-3 text-center" style="padding:20px">Error al cargar datos: ' + e.message + '</div>';
+    }
+  };
+
   window.sendKlinosChat = async function () {
     const input = document.getElementById('chat-input');
     const msg = input.value.trim();
