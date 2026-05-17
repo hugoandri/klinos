@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launchpad + Klinós — Plataforma Clínica</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ═══════════ LOGIN OVERLAY ═══════════ -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <div class="login-logo"><span>K</span>linós</div>
+      <div class="login-sub">Plataforma Clínica Integrada</div>
+      <div class="form-group">
+        <label for="login-user">Usuario</label>
+        <input id="login-user" type="text" placeholder="hugo, maria, pedro, recepcion" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="login-pass">Contraseña</label>
+        <input id="login-pass" type="password" placeholder="••••••••">
+      </div>
+      <div class="login-error" id="login-error">Credenciales inválidas</div>
+      <button class="login-btn" onclick="login()">Ingresar</button>
+    </div>
+  </div>
+
+  <div class="app">
+
+    <!-- ═══════════ SIDEBAR ═══════════ -->
+    <div class="sidebar">
+        <div class="sb-logo">
+        <div class="sb-logo-name"><span>K</span>linós</div>
+        <div class="sb-logo-sub">plataforma clínica integrada</div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Principal</div>
+        <div class="sb-item active" onclick="nav('dashboard',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+          <span>Dashboard</span>
+        </div>
+        <div class="sb-item" onclick="nav('agenda',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M5 1v2M11 1v2M1 6h14"/></svg>
+          <span>Agenda</span>
+        </div>
+        <div class="sb-item" onclick="nav('reservar',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M8 6v4M6 8h4"/></svg>
+          <span>Reservar Hora</span>
+        </div>
+        <div class="sb-item" onclick="nav('pacientes',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+          <span>Pacientes</span>
+        </div>
+        <div class="sb-item" onclick="nav('historial',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v4l2.5 1.5"/></svg>
+          <span>Historial</span>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Klinós IA</div>
+        <div class="sb-item" onclick="nav('sesiones',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M5 1v2M11 1v2M1 6h14"/><circle cx="8" cy="9" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg>
+          <span>Sesiones</span>
+        </div>
+        <div class="sb-item" onclick="nav('klinos',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12V5a2 2 0 012-2h8a2 2 0 012 2v7"/><path d="M1 12h14M6 8h4M6 10.5h2"/></svg>
+          <span>Memoria Clínica</span>
+        </div>
+        <div class="sb-item" onclick="nav('carga',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a6 6 0 100 12A6 6 0 008 2z"/><path d="M8 5v3l2 2"/></svg>
+          <span>Carga Emocional</span>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Administración</div>
+        <div class="sb-item" onclick="nav('terapeutas',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 7a3 3 0 100-6 3 3 0 000 6zM1 14c0-2.8 2.2-5 5-5h2M11 10v5M8.5 12.5h5"/></svg>
+          <span>Terapeutas</span>
+        </div>
+        <div class="sb-item" onclick="nav('eventos',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2s-5 3-5 7a5 5 0 0010 0c0-4-5-7-5-7z"/><circle cx="8" cy="9" r="1.5" fill="currentColor"/></svg>
+          <span>Eventos</span>
+        </div>
+        <div class="sb-item" onclick="nav('cursos',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l6 3-6 3-6-3 6-3zM2 8l6 3 6-3M2 11l6 3 6-3"/></svg>
+          <span>Cursos</span>
+        </div>
+        <div class="sb-item" onclick="nav('miembros',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="2.5"/><circle cx="11" cy="5" r="2.5"/><path d="M1 13c0-2.2 1.8-4 4-4h6c2.2 0 4 1.8 4 4"/></svg>
+          <span>Miembros</span>
+        </div>
+        <div class="sb-item" onclick="nav('terapias',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1A7 7 0 108 15 7 7 0 108 1z"/><path d="M5.5 8h5M8 5.5v5"/></svg>
+          <span>Terapias</span>
+        </div>
+        <div class="sb-item" onclick="nav('finanzas',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 4v8M6 6h3.5a1.5 1.5 0 010 3H6.5a1.5 1.5 0 000 3H10"/></svg>
+          <span>Finanzas</span>
+        </div>
+        <div class="sb-item" onclick="nav('configuracion',this)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M3.2 12.8l1.4-1.4M11.4 4.6l1.4-1.4"/></svg>
+          <span>Configuración</span>
+        </div>
+      </div>
+
+      <div class="sb-footer">
+        <div class="sb-user">
+          <div class="sb-avatar" id="sb-avatar">MG</div>
+          <div class="sb-user-info">
+            <div class="sb-name" id="sb-name">Dra. María González</div>
+            <div class="sb-role" id="sb-role">admin</div>
+          </div>
+          <button class="sb-logout" onclick="logout()" title="Cerrar sesión">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 12l3-3-3-3M14 9H6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ MAIN ═══════════ -->
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-right">
+          <div class="topbar-date">Miércoles 15, abril 2026</div>
+          <button class="btn-outline btn-sm" onclick="nav('historial',document.querySelector('[onclick*=historial]'))">Historial</button>
+          <button class="btn-primary btn-sm" onclick="nav('reservar',document.querySelector('[onclick*=reservar]'))">+ Reservar</button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- ══════ DASHBOARD ══════ -->
+        <div class="panel active" id="p-dashboard">
+          <div class="alert alert-amber">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L15 14H1L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
+            <span><strong>Alerta de carga:</strong> 3 sesiones de alta intensidad consecutivas hoy (Dra. González). Considera una pausa entre las 14:00 y 15:00.</span>
+          </div>
+
+          <div class="stats-grid" id="dashboard-stats">
+            <div class="stat"><div class="stat-label">Citas hoy</div><div class="stat-val" data-stat="citas">6</div><div class="stat-sub">hoy</div></div>
+            <div class="stat"><div class="stat-label">Pacientes activos</div><div class="stat-val" data-stat="pacientes">6</div><div class="stat-sub">en seguimiento</div></div>
+            <div class="stat"><div class="stat-label">Pagos pendientes</div><div class="stat-val" data-stat="pagos">3</div><div class="stat-sub" data-stat="monto">$90.000 aprox.</div></div>
+            <div class="stat"><div class="stat-label">Terapeutas activos</div><div class="stat-val" data-stat="terapeutas">4</div><div class="stat-sub">todos disponibles hoy</div></div>
+          </div>
+
+          <div class="countdown">
+            <div id="countdown-next">
+              <div class="fs-10 fw-500" style="text-transform:uppercase;letter-spacing:0.5px;color:var(--green)">Próxima sesión</div>
+              <div class="lora fs-15 mt-3" style="color:var(--text)">Juan Pérez — Psicoterapia Individual</div>
+              <div class="fs-11 mt-3" style="color:var(--green)">En 18 minutos · 09:00 · Sala 1 · Dra. González</div>
+            </div>
+            <button class="btn-primary" onclick="showDetail('p1')">Ver ficha →</button>
+          </div>
+
+          <div class="sec-lbl">Citas de hoy</div>
+          <div class="card" id="citas-hoy">
+            <div class="list-item"><div class="list-info"><div class="list-name text-3">Cargando citas...</div></div></div>
+          </div>
+
+          <div class="sec-lbl">Equipo de terapeutas</div>
+          <div class="grid-2" id="terapeutas-grid"></div>
+        </div>
+
+        <!-- ══════ AGENDA ══════ -->
+        <div class="panel" id="p-agenda">
+          <div class="flex-between gap-8 flex-wrap">
+            <div class="fs-12 text-2">Vista diaria — <strong>Miércoles 15 de abril, 2026</strong></div>
+            <div class="flex gap-6">
+              <button class="btn-outline btn-sm">← Anterior</button>
+              <button class="btn-outline btn-sm">Siguiente →</button>
+              <button class="btn-primary btn-sm" onclick="nav('reservar',document.querySelector('[onclick*=reservar]'))">+ Nueva cita</button>
+            </div>
+          </div>
+          <div class="card agenda-wrap">
+            <div class="agenda-grid">
+              <div class="ag-header" style="grid-template-columns:64px repeat(4,1fr)">
+                <div class="fs-10 text-3" style="padding:10px 8px;border-right:1px solid var(--border)">Hora</div>
+                <div class="text-center" style="padding:10px 8px;border-right:1px solid var(--border)"><div class="av av-xs av-blue" style="margin:0 auto 3px">MG</div><div class="fs-10 fw-500">Dra. González</div><div class="fs-9 text-3">Psicología</div></div>
+                <div class="text-center" style="padding:10px 8px;border-right:1px solid var(--border)"><div class="av av-xs av-rose" style="margin:0 auto 3px">AL</div><div class="fs-10 fw-500">Dra. López</div><div class="fs-9 text-3">Fonoaudiología</div></div>
+                <div class="text-center" style="padding:10px 8px;border-right:1px solid var(--border)"><div class="av av-xs av-sage" style="margin:0 auto 3px">PS</div><div class="fs-10 fw-500">Dr. Silva</div><div class="fs-9 text-3">Kinesiología</div></div>
+                <div class="text-center" style="padding:10px 8px"><div class="av av-xs av-amber" style="margin:0 auto 3px">CR</div><div class="fs-10 fw-500">Dr. Ruiz</div><div class="fs-9 text-3">T. Ocupacional</div></div>
+              </div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">09:00</div><div class="ag-cell"><div class="ag-appt ag-confirmada"><strong>Juan Pérez</strong>Psicoterapia · 50m</div></div><div class="ag-cell"></div><div class="ag-cell"><div class="ag-appt ag-confirmada"><strong>María Soto</strong>Kinesiología · 45m</div></div><div class="ag-cell"></div></div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">09:30</div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div></div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">10:00</div><div class="ag-cell"></div><div class="ag-cell"><div class="ag-appt ag-pendiente_pago"><strong>Carlos Muñoz</strong>Fonoaudiología · 30m</div></div><div class="ag-cell"></div><div class="ag-cell"></div></div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">10:30</div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div></div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">11:00</div><div class="ag-cell"><div class="ag-appt ag-confirmada"><strong>Roberto Díaz</strong>Psicoterapia · 50m</div></div><div class="ag-cell"></div><div class="ag-cell"><div class="ag-appt ag-pendiente_pago"><strong>Ana Fernández</strong>Kinesiología · 45m</div></div><div class="ag-cell"></div></div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">12:00</div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div></div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">14:00</div><div class="ag-cell"><div class="ag-appt ag-confirmada"><strong>Valentina Rojas</strong>Evaluación · 50m</div></div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div></div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">15:00</div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div></div>
+              <div class="ag-row" style="grid-template-columns:64px repeat(4,1fr)"><div class="ag-time">16:00</div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div><div class="ag-cell"></div></div>
+            </div>
+          </div>
+          <div class="flex gap-14 flex-wrap">
+            <div class="flex-center gap-5 fs-10 text-3"><div class="legend-dot" style="background:#DFF0E8;border:1px solid var(--sage-mid)"></div>Confirmada</div>
+            <div class="flex-center gap-5 fs-10 text-3"><div class="legend-dot" style="background:var(--amber-light);border:1px solid #E8C07A"></div>Pend. pago</div>
+            <div class="flex-center gap-5 fs-10 text-3"><div class="legend-dot" style="background:var(--blue-light);border:1px solid #90B8E0"></div>Completada</div>
+            <div class="flex-center gap-5 fs-10 text-3"><div class="legend-dot" style="background:var(--rose-light);border:1px solid #DCA0AA"></div>Cancelada</div>
+          </div>
+        </div>
+
+        <!-- ══════ RESERVAR ══════ -->
+        <div class="panel" id="p-reservar">
+          <div class="card card-pad" style="max-width:100%">
+            <div class="card-title">Reservar nueva hora</div>
+            <div class="flex-col gap-12">
+              <div class="form-row" style="grid-template-columns:repeat(4,1fr)">
+                <div class="form-group"><label>Paciente *</label><select><option value="">Seleccionar...</option><option>Juan Pérez</option><option>María Soto</option><option>Carlos Muñoz</option><option>Ana Fernández</option><option>Roberto Díaz</option><option>Valentina Rojas</option></select></div>
+                <div class="form-group"><label>Terapeuta *</label><select><option value="">Seleccionar...</option><option>Dra. María González</option><option>Dr. Carlos Ruiz</option><option>Dra. Ana López</option><option>Dr. Pedro Silva</option></select></div>
+                <div class="form-group"><label>Fecha *</label><input type="date" value="2026-04-16"></div>
+                <div class="form-group"><label>Hora *</label><select><option>09:00</option><option>09:30</option><option>10:00</option><option>10:30</option><option>11:00</option><option>11:30</option><option>14:00</option><option>14:30</option><option>15:00</option><option>15:30</option><option>16:00</option></select></div>
+              </div>
+              <div class="form-row" style="grid-template-columns:repeat(4,1fr)">
+                <div class="form-group"><label>Tipo de sesión *</label><select><option value="">Seleccionar...</option><option>Psicoterapia Individual</option><option>Evaluación Psicológica</option><option>Kinesiología</option><option>Fonoaudiología</option><option>Terapia Ocupacional</option></select></div>
+                <div class="form-group"><label>Sala *</label><select><option>Sala 1</option><option>Sala 2</option><option>Sala 3</option><option>Sala 4</option></select></div>
+                <div class="form-group"><label>Duración</label><select><option>30 min</option><option>45 min</option><option selected>50 min</option><option>60 min</option></select></div>
+                <div class="form-group"><label></label><div></div></div>
+              </div>
+              <div class="form-group"><label>Notas (opcional)</label><textarea placeholder="Motivo de consulta, indicaciones previas..."></textarea></div>
+              <div class="flex gap-8 justify-end" style="margin-top:4px">
+                <button class="btn-outline" onclick="nav('dashboard',document.querySelector('[onclick*=dashboard]'))">Cancelar</button>
+                <button class="btn-primary">Confirmar Reserva</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ PACIENTES ══════ -->
+        <div class="panel" id="p-pacientes">
+          <!-- LISTA -->
+          <div id="pac-list">
+            <div class="flex-between gap-12 flex-wrap">
+              <div class="fs-12 text-2" id="pacientes-count">6 pacientes activos · 0 archivados</div>
+              <div class="flex gap-8 flex-center">
+                <div class="search-wrap" style="width:200px">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+                  <input type="text" placeholder="Buscar por nombre o RUT...">
+                </div>
+                <button class="btn-primary btn-sm">+ Nuevo paciente</button>
+              </div>
+            </div>
+            <div class="grid-3" id="pacientes-grid"></div>
+          </div>
+
+          <!-- DETALLE PACIENTE (dinámico) -->
+          <div id="pac-detail" class="flex-col gap-14" style="display:none"></div>
+        </div>
+
+        <!-- ══════ HISTORIAL ══════ -->
+        <div class="panel" id="p-historial">
+          <div class="flex gap-8 flex-wrap flex-center">
+            <div class="search-wrap flex-1 min-w-160">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+              <input type="text" placeholder="Buscar paciente o tipo de sesión...">
+            </div>
+            <select style="width:160px"><option>Todos los estados</option><option>Confirmada</option><option>Pend. pago</option><option>Completada</option><option>Cancelada</option></select>
+            <select style="width:190px"><option>Todos los terapeutas</option><option>Dra. González</option><option>Dr. Ruiz</option><option>Dra. López</option><option>Dr. Silva</option></select>
+          </div>
+      <div class="fs-11 text-3" id="historial-count">0 citas en total</div>
+      <div class="card" id="historial-list"></div>
+        </div>
+
+        <!-- ══════ SESIONES ══════ -->
+        <div class="panel" id="p-sesiones">
+          <div class="flex-between gap-12 flex-wrap">
+            <div class="fs-12 text-2" id="sesiones-count">Cargando sesiones...</div>
+            <div class="flex gap-8 flex-center">
+              <select id="sesiones-filtro" style="width:200px" onchange="loadSesiones()">
+                <option value="hoy">Hoy</option>
+                <option value="semana">Esta semana</option>
+                <option value="todas">Todas</option>
+              </select>
+            </div>
+          </div>
+          <div class="sesiones-grid" id="sesiones-grid"></div>
+          <!-- Writing interface (hidden by default) -->
+          <div id="sesion-writing" style="display:none" class="flex-col gap-14">
+            <button class="back-btn" onclick="cerrarPanelEscritura()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 12L6 8l4-4"/></svg>
+              Volver a sesiones
+            </button>
+            <div class="card card-pad">
+              <div class="flex-between">
+                <div>
+                  <div class="lora fs-16" id="sw-paciente">Paciente</div>
+                  <div class="fs-12 text-3 mt-3" id="sw-info">Tipo · Sala · Hora</div>
+                </div>
+                <button class="btn-primary" id="btn-cerrar-sesion" onclick="cerrarSesion()">Cerrar sesión y analizar</button>
+              </div>
+            </div>
+            <div id="sw-paciente-info" class="card card-pad" style="display:none">
+              <div class="fs-11 fw-600 mb-6" style="color:var(--green)">Ficha del paciente</div>
+              <div class="fs-11 text-2" id="sw-paciente-detalle"></div>
+            </div>
+            <div id="sw-sesiones-previas" class="card card-pad" style="display:none">
+              <div class="fs-11 fw-600 mb-6" style="color:var(--text-2)">Sesiones anteriores</div>
+              <div class="flex-col gap-6" id="sw-sesiones-previas-lista"></div>
+            </div>
+            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:300px">
+              <div class="card-pad" style="border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                <div class="card-title" style="margin:0">Notas de la sesión</div>
+                <div class="fs-11 text-3">Escribí libremente, Klinós IA analizará al cerrar</div>
+              </div>
+              <textarea id="sw-notas" class="w-full" style="flex:1;min-height:250px;border:none;border-radius:0;resize:vertical;padding:16px;font-size:13px;line-height:1.7" placeholder="¿Qué está pasando en la sesión? Escribí todo lo que consideres relevante..."></textarea>
+              <div class="card-pad flex gap-8 justify-end" style="border-top:1px solid var(--border)">
+                <button class="btn-outline btn-sm" onclick="guardarBorrador()">Guardar borrador</button>
+              </div>
+            </div>
+          </div>
+          <!-- Analysis result (hidden) -->
+          <div id="sesion-analisis" style="display:none" class="flex-col gap-14">
+            <button class="back-btn" onclick="cerrarAnalisis()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 12L6 8l4-4"/></svg>
+              Volver a sesiones
+            </button>
+            <div class="card card-pad">
+              <div class="card-title">Análisis de sesión completado</div>
+              <div id="analisis-content"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ KLINÓS — MEMORIA CLÍNICA ══════ -->
+        <div class="panel" id="p-klinos">
+          <div class="alert alert-amber">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L15 14H1L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
+            <span><strong>Alerta clínica Klinós:</strong> Roberto Díaz lleva 3 sesiones consecutivas sin avances significativos. Considera revisar el enfoque o derivar a supervisión.</span>
+          </div>
+
+          <div class="sec-lbl">Resumen clínico de todos los procesos</div>
+          <div class="flex-col gap-8" id="klinos-list"></div>
+
+          <!-- Chat Klinós IA -->
+          <div class="card">
+            <div class="card-pad" style="border-bottom:1px solid var(--border)">
+              <div class="flex-between">
+                <div class="card-title" style="margin:0">Klinós IA — Asistente Clínico</div>
+                <div class="flex-center gap-6">
+                  <select id="chat-paciente" style="width:180px;font-size:11px" onchange="">
+                    <option value="0">Sin contexto de paciente</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="chat-log" id="chat-log">
+              <div class="chat-msg chat-ai"><strong>Klinós IA:</strong> ¡Hola! Soy tu asistente clínico. Puedo ayudarte a reflexionar sobre casos, sugerir intervenciones, o analizar patrones. Selecciona un paciente arriba para contextualizar la conversación.</div>
+            </div>
+            <div class="chat-input-wrap">
+              <input type="text" id="chat-input" placeholder="Escribe tu consulta clínica..." onkeydown="if(event.key==='Enter')sendKlinosChat()">
+              <button class="btn-primary" onclick="sendKlinosChat()">Enviar</button>
+            </div>
+          </div>
+
+          <div class="sec-lbl">Biblioteca clínica</div>
+          <div class="grid-3">
+            <div class="card card-pad"><div class="fs-12 fw-500 mb-3">Registro de pensamientos</div><div class="fs-11 text-3 mb-8">TCC · Ansiedad · Depresión</div><button class="btn-outline btn-sm w-full">Usar con paciente</button></div>
+            <div class="card card-pad"><div class="fs-12 fw-500 mb-3">Relajación muscular progresiva</div><div class="fs-11 text-3 mb-8">Técnica · Estrés · Ansiedad</div><button class="btn-outline btn-sm w-full">Usar con paciente</button></div>
+            <div class="card card-pad"><div class="fs-12 fw-500 mb-3">Escala GAD-7</div><div class="fs-11 text-3 mb-8">Evaluación · Ansiedad generalizada</div><button class="btn-outline btn-sm w-full">Usar con paciente</button></div>
+            <div class="card card-pad"><div class="fs-12 fw-500 mb-3">Diálogo socrático</div><div class="fs-11 text-3 mb-8">TCC · Reestructuración cognitiva</div><button class="btn-outline btn-sm w-full">Usar con paciente</button></div>
+            <div class="card card-pad"><div class="fs-12 fw-500 mb-3">Técnica de flecha descendente</div><div class="fs-11 text-3 mb-8">TCC · Creencias nucleares</div><button class="btn-outline btn-sm w-full">Usar con paciente</button></div>
+            <div class="card card-pad flex-center" style="border:1px dashed var(--border);cursor:pointer;justify-content:center">
+              <div class="text-center text-3"><div class="fs-20 mb-3">+</div><div class="fs-11">Agregar recurso</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ CARGA EMOCIONAL ══════ -->
+        <div class="panel" id="p-carga">
+          <div class="alert alert-amber">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L15 14H1L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
+            <span>Esta semana tienes 4 sesiones de alta intensidad. Considera reservar un espacio de autocuidado el viernes por la tarde.</span>
+          </div>
+
+          <div class="stats-grid-3">
+            <div class="stat"><div class="stat-label">Sesiones esta semana</div><div class="stat-val" data-carga="sesiones">8</div><div class="stat-sub">esta semana</div></div>
+            <div class="stat"><div class="stat-label">Alta intensidad</div><div class="stat-val" data-carga="alta">4</div><div class="stat-sub">del total semanal</div></div>
+            <div class="stat"><div class="stat-label">Check-in hoy</div><div class="stat-val" style="color:var(--sage)">Bien</div><div class="stat-sub">Registrado 08:30</div></div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card card-pad">
+              <div class="card-title">Nivel de carga estimada — semana</div>
+              <div class="flex-center gap-14 mt-6">
+                <div class="gauge-bar flex-1"><div class="gauge-pin" style="left:62%"></div></div>
+                <div class="fs-14 fw-500" style="color:var(--amber);white-space:nowrap">Media-alta</div>
+              </div>
+              <div class="flex-between fs-10 text-3 mt-5"><span>Baja</span><span>Media</span><span>Alta</span></div>
+              <div class="fs-11 text-2 mt-10" style="padding:8px;background:var(--amber-light);border-radius:7px">Nivel Media-alta: considera no agendar nuevos pacientes intensivos esta semana.</div>
+            </div>
+
+            <div class="card card-pad">
+              <div class="card-title">Check-in personal de hoy</div>
+              <div class="fs-12 text-2 mb-10">¿Cómo llegás a la jornada de hoy?</div>
+              <div class="flex gap-6 flex-wrap mb-10">
+                <button class="btn-outline btn-sm">😓 Agotada</button>
+                <button class="btn-primary btn-sm">😊 Bien</button>
+                <button class="btn-outline btn-sm">😄 Muy bien</button>
+              </div>
+              <div class="fs-11 text-3">Nota opcional:</div>
+              <textarea class="mt-4" style="font-size:11px" rows="2" placeholder="¿Algo que quieras registrar sobre tu estado hoy?"></textarea>
+            </div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="card-title">Intensidad de sesiones por día — semana actual</div>
+            <div class="hm">
+              <div class="hm-col"><div class="hm-cell" style="background:#A8CBBA"></div><div class="hm-cell" style="background:#C0DD97"></div><div class="hm-lbl">Lun</div></div>
+              <div class="hm-col"><div class="hm-cell" style="background:#FDF0DC"></div><div class="hm-cell" style="background:#E8B86D"></div><div class="hm-lbl">Mar</div></div>
+              <div class="hm-col"><div class="hm-cell" style="background:#DFF0E8"></div><div class="hm-cell" style="background:#FBEDEF"></div><div class="hm-lbl">Mié</div></div>
+              <div class="hm-col"><div class="hm-cell" style="background:#DCA0AA"></div><div class="hm-cell" style="background:#DCA0AA"></div><div class="hm-lbl">Jue</div></div>
+              <div class="hm-col"><div class="hm-cell" style="background:#DFF0E8"></div><div class="hm-cell" style="background:#A8CBBA"></div><div class="hm-lbl">Vie</div></div>
+            </div>
+            <div class="flex gap-12 mt-12 flex-wrap">
+              <div class="flex-center gap-4 fs-10 text-3"><div style="width:10px;height:10px;border-radius:2px;background:#A8CBBA"></div>Baja</div>
+              <div class="flex-center gap-4 fs-10 text-3"><div style="width:10px;height:10px;border-radius:2px;background:#E8B86D"></div>Media</div>
+              <div class="flex-center gap-4 fs-10 text-3"><div style="width:10px;height:10px;border-radius:2px;background:#DCA0AA"></div>Alta</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ TERAPEUTAS ══════ -->
+        <div class="panel" id="p-terapeutas">
+          <div class="justify-end flex"><button class="btn-primary btn-sm">+ Nuevo terapeuta</button></div>
+      <div class="grid-2" id="terapeutas-list"></div>
+        </div>
+
+        <!-- ══════ EVENTOS ══════ -->
+        <div class="panel" id="p-eventos">
+          <div class="justify-end flex"><button class="btn-primary btn-sm">+ Nuevo Evento</button></div>
+      <div class="grid-2" id="eventos-list"></div>
+        </div>
+
+        <!-- ══════ CURSOS ══════ -->
+        <div class="panel" id="p-cursos">
+          <div class="flex-between gap-8 flex-wrap">
+            <div class="tabs">
+              <div class="tab active">Cursos</div>
+              <div class="tab">Mensualidades</div>
+              <div class="tab">Calendario</div>
+              <div class="tab">Tipos</div>
+              <div class="tab">Profesores</div>
+              <div class="tab">Alumnos</div>
+            </div>
+            <button class="btn-primary btn-sm">+ Nuevo Curso</button>
+          </div>
+      <div class="grid-2" id="cursos-list"></div>
+        </div>
+
+        <!-- ══════ MIEMBROS ══════ -->
+        <div class="panel" id="p-miembros">
+          <div class="card card-pad max-w-420">
+            <div class="card-title">Invitar miembro</div>
+            <div class="flex-col gap-10">
+              <div class="form-group"><label>Email del usuario</label><input type="email" placeholder="correo@ejemplo.com"></div>
+              <div class="form-group"><label>Rol</label><select><option>Terapeuta</option><option>Recepción</option><option>Administrador</option></select></div>
+              <button class="btn-primary btn-sm self-end">Enviar invitación</button>
+            </div>
+          </div>
+          <div class="card overflow-hidden">
+            <table class="mem-table">
+              <thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Ingresó</th><th></th></tr></thead>
+            <tbody id="miembros-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══════ FINANZAS ══════ -->
+        <div class="panel" id="p-finanzas">
+          <div class="stats-grid-3">
+            <div class="stat"><div class="stat-label">Ingresos abril</div><div class="stat-val">$540k</div><div class="stat-sub">9 sesiones cobradas</div></div>
+            <div class="stat"><div class="stat-label">Por cobrar</div><div class="stat-val">$90k</div><div class="stat-sub">3 sesiones pendientes</div></div>
+            <div class="stat"><div class="stat-label">Tasa de cobro</div><div class="stat-val">75%</div><div class="stat-sub">mes actual</div></div>
+          </div>
+          <div class="flex-between gap-8 flex-wrap">
+            <div class="tabs">
+              <div class="tab active">Todas</div>
+              <div class="tab">Pagadas</div>
+              <div class="tab">Pendientes</div>
+            </div>
+            <button class="btn-outline btn-sm">Exportar CSV</button>
+          </div>
+          <div class="card overflow-hidden">
+            <table class="fin-table">
+              <thead><tr><th>Paciente</th><th>Terapeuta</th><th>Tipo</th><th>Fecha</th><th>Monto</th><th>Estado</th></tr></thead>
+            <tbody id="finanzas-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══════ TERAPIAS ══════ -->
+        <div class="panel" id="p-terapias">
+          <div class="flex-between gap-12 flex-wrap">
+            <div class="fs-12 text-2">Gestiona los tipos de terapia que se ofrecen en el centro</div>
+          </div>
+          <div class="flex gap-8 mb-6">
+            <button class="btn-primary btn-sm" onclick="mostrarFormTerapia()">+ Nueva terapia</button>
+          </div>
+          <div class="card overflow-hidden" style="border:1px solid var(--border)">
+            <table class="mem-table">
+              <thead><tr><th>Nombre</th><th>Descripción</th><th>Duración</th><th>Color</th><th>Activo</th><th></th></tr></thead>
+              <tbody id="terapias-list"></tbody>
+            </table>
+          </div>
+          <!-- inline form (hidden) -->
+          <div id="terapia-form" style="display:none" class="card card-pad mt-6">
+            <div class="flex-col gap-8">
+              <div class="flex gap-8">
+                <div class="form-group" style="flex:2">
+                  <label>Nombre</label>
+                  <input type="text" id="tf-nombre" placeholder="Ej: Psicoterapia Individual">
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label>Duración (min)</label>
+                  <input type="number" id="tf-duracion" value="50">
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label>Color</label>
+                  <input type="color" id="tf-color" value="#3E8E6B" style="height:36px;border:none;cursor:pointer;padding:0">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Descripción</label>
+                <input type="text" id="tf-descripcion" placeholder="Breve descripción">
+              </div>
+              <div class="flex gap-12 mt-4">
+                <label class="flex-center gap-6 fs-12" style="cursor:pointer"><input type="checkbox" id="tf-activo" checked> Activo</label>
+              </div>
+              <div class="flex gap-8">
+                <button class="btn-primary btn-sm" onclick="guardarTerapia()">Guardar</button>
+                <button class="btn-outline btn-sm" onclick="cancelarFormTerapia()">Cancelar</button>
+                <input type="hidden" id="tf-id" value="">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ CONFIGURACIÓN ══════ -->
+        <div class="panel config-section" id="p-configuracion">
+          <div class="config-card">
+            <h3>Información del centro</h3>
+            <div class="form-group config-row">
+              <label>Nombre del centro</label>
+              <input type="text" id="cfg-nombre" value="Centro Terapéutico Integral">
+            </div>
+            <div class="form-row">
+              <div class="form-group config-row">
+                <label>Email de contacto</label>
+                <input type="email" id="cfg-email" value="contacto@centro.cl">
+              </div>
+              <div class="form-group config-row">
+                <label>Teléfono</label>
+                <input type="text" id="cfg-telefono" value="+56 2 1234 5678">
+              </div>
+            </div>
+            <div class="form-group config-row">
+              <label>Dirección</label>
+              <input type="text" id="cfg-direccion" value="Av. Providencia 1234, Santiago">
+            </div>
+          </div>
+
+          <div class="config-card">
+            <h3>Apariencia</h3>
+            <div class="config-row dark-toggle">
+              <label>Modo oscuro</label>
+              <div class="dark-toggle-switch" id="dark-toggle" onclick="toggleDark()"></div>
+            </div>
+            <div class="config-row mt-6">
+              <label>Color primario</label>
+              <div class="flex-center gap-10">
+                <input type="color" id="cfg-color" value="#3E8E6B" onchange="cambiarColorTema(this.value)" style="width:40px;height:40px;border:none;cursor:pointer;border-radius:6px;padding:0">
+                <span class="fs-11 text-3" id="cfg-color-label">#3E8E6B</span>
+              </div>
+            </div>
+            <div class="config-row mt-6">
+              <label>Color del panel lateral</label>
+              <div class="flex-center gap-10">
+                <input type="color" id="cfg-sidebar-color" value="#0F1A2E" onchange="cambiarColorSidebar(this.value)" style="width:40px;height:40px;border:none;cursor:pointer;border-radius:6px;padding:0">
+                <span class="fs-11 text-3" id="cfg-sidebar-color-label">#0F1A2E</span>
+              </div>
+            </div>
+            <div class="config-row mt-6">
+              <label>Tamaño de letra</label>
+              <div class="flex-center gap-10">
+                <input type="range" id="cfg-font-size" min="12" max="20" step="1" value="14" oninput="cambiarFontSize(this.value)" style="width:160px;cursor:pointer">
+                <span class="fs-11 text-3" id="cfg-font-size-label">14px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="config-card">
+            <h3>Notificaciones</h3>
+            <div class="flex-col gap-8 fs-12 text-2">
+              <div class="flex-between"><span>Recordatorios de citas</span><button class="btn-primary btn-sm" id="cfg-notif-citas">ON</button></div>
+              <div class="flex-between"><span>Alertas de Klinós</span><button class="btn-primary btn-sm" id="cfg-notif-klinos">ON</button></div>
+              <div class="flex-between"><span>Resumen semanal</span><button class="btn-outline btn-sm" id="cfg-notif-resumen">OFF</button></div>
+            </div>
+          </div>
+
+          <div class="config-card">
+            <h3>Integraciones</h3>
+            <div class="config-row">
+              <label>Groq API Key</label>
+              <div class="flex gap-8" style="max-width:400px">
+                <input type="password" id="cfg-groq-key" placeholder="gsk_..." style="flex:1">
+                <button class="btn-primary btn-sm" onclick="saveGroqKey()">Guardar</button>
+              </div>
+              <div class="fs-10 text-3 mt-4">Necesaria para el chat de Klinós IA. Obtén tu key en <a href="https://console.groq.com" target="_blank" style="color:var(--green)">console.groq.com</a></div>
+            </div>
+          </div>
+
+          <div class="config-card">
+            <h3>Gestión de usuarios</h3>
+            <div class="fs-11 text-3 mb-10">Cambia roles y permisos de cada usuario del sistema.</div>
+            <div class="flex gap-8 mb-10">
+              <button class="btn-primary btn-sm" onclick="mostrarFormUsuario()">+ Agregar usuario</button>
+            </div>
+            <div id="nuevo-usuario-form" style="display:none" class="card card-pad mb-10">
+              <div class="flex-col gap-8">
+                <div class="flex gap-8">
+                  <div class="form-group" style="flex:1">
+                    <label>Nombre</label>
+                    <input type="text" id="nu-nombre" placeholder="Nombre completo">
+                  </div>
+                  <div class="form-group" style="flex:1">
+                    <label>Username</label>
+                    <input type="text" id="nu-username" placeholder="usuario">
+                  </div>
+                </div>
+                <div class="flex gap-8">
+                  <div class="form-group" style="flex:1">
+                    <label>Email</label>
+                    <input type="email" id="nu-email" placeholder="email@ejemplo.cl">
+                  </div>
+                  <div class="form-group" style="flex:1">
+                    <label>Contraseña</label>
+                    <input type="password" id="nu-password" placeholder="••••••••">
+                  </div>
+                  <div class="form-group" style="flex:1">
+                    <label>Rol</label>
+                    <select id="nu-rol">
+                      <option value="admin">Admin</option>
+                      <option value="terapeuta" selected>Terapeuta</option>
+                      <option value="recepcion">Recepción</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="flex gap-8">
+                  <button class="btn-primary btn-sm" onclick="guardarNuevoUsuario()">Guardar</button>
+                  <button class="btn-outline btn-sm" onclick="cancelarFormUsuario()">Cancelar</button>
+                </div>
+              </div>
+            </div>
+            <div class="card overflow-hidden" style="border:1px solid var(--border)">
+              <table class="mem-table">
+                <thead><tr><th>Usuario</th><th>Rol</th><th>Permisos</th><th></th></tr></thead>
+                <tbody id="users-list"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="flex gap-8">
+            <button class="btn-primary" onclick="saveConfig()">Guardar cambios del centro</button>
+            <div class="config-saved-msg" id="config-saved-msg">✓ Cambios guardados</div>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main -->
+  </div><!-- /app -->
+
+  <script src="js/app.js"></script>
+</body>
+</html>
