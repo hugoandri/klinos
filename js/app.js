@@ -543,7 +543,7 @@
         const statusLabel = p.sesiones_total > 10 ? 'Buen progreso' : p.sesiones_total > 5 ? 'En evolución' : 'Fase inicial';
         const statusBadgeCls = p.sesiones_total > 10 ? 'badge-green' : p.sesiones_total > 5 ? 'badge-amber' : 'badge-gray';
         return `
-          <div class="card card-pad cursor-pointer" onclick="showDetail('p${p.id}');nav('pacientes',document.querySelector('[onclick*=pacientes]'))">
+          <div class="card card-pad cursor-pointer" onclick="showDetail('p${p.id}')">
             <div class="flex-center gap-12">
               <div class="av av-sm ${avatarColors[i % avatarColors.length]}">${initials(p.nombre)}</div>
               <div class="flex-1"><div class="fs-13 fw-500">${p.nombre}</div><div class="fs-11 text-3">${p.diagnostico || ''} · ${p.terapeuta?.nombre || ''} · Sesión ${p.sesiones_total}</div></div>
@@ -568,16 +568,142 @@
   }
 
   // ─── Load: Carga Emocional ───
+  const meses = { ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,oct:9,nov:10,dic:11 };
+  function parseFecha(f) {
+    const p = f.split(' ');
+    if (p.length < 2) return null;
+    const d = parseInt(p[0]), m = meses[p[1]?.toLowerCase().slice(0,3)];
+    return isNaN(d) || m === undefined ? null : new Date(2026, m, d);
+  }
+  function nombreDia(date) {
+    return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][date.getDay()];
+  }
+  function semanaActual() {
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(now.getDate() - now.getDay() + 1);
+    start.setHours(0,0,0,0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return { start, end };
+  }
+
   async function loadCarga() {
     try {
-      const citas = await get('/citas?fecha=15%20abr');
-      const total = citas.length;
-      const altaEl = document.querySelector('[data-carga="alta"]');
-      const sesEl = document.querySelector('[data-carga="sesiones"]');
-      if (sesEl) sesEl.textContent = total;
-      if (altaEl) altaEl.textContent = Math.ceil(total * 0.5);
+      const terapeutas = await get('/terapeutas');
+      const allSessions = [];
+      for (const t of terapeutas) {
+        const ss = await get('/klinos/sesiones/terapeuta/' + t.id);
+        allSessions.push(...ss);
+      }
+      const intensidadNum = { baja: 1, media: 2, alta: 3 };
+      const numInt = { 1: 'baja', 2: 'media', 3: 'alta' };
+      const ses = allSessions.filter(s => s.intensidad && s.sesion_estado === 'cerrada').map(s => ({ ...s, date: parseFecha(s.fecha) })).filter(s => s.date);
+
+      // Weekly: group by day
+      const week = semanaActual();
+      const weekSessions = ses.filter(s => s.date >= week.start && s.date <= week.end);
+      const byDay = {};
+      weekSessions.forEach(s => {
+        const day = nombreDia(s.date);
+        if (!byDay[day]) byDay[day] = [];
+        byDay[day].push(s);
+      });
+      window._cargaByDay = byDay;
+      const daysOrder = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+      const diasEl = document.getElementById('carga-dias');
+      if (diasEl) {
+        diasEl.innerHTML = daysOrder.map(day => {
+          const sessions = byDay[day] || [];
+          const avg = sessions.length > 0 ? sessions.reduce((a, s) => a + (intensidadNum[s.intensidad] || 0), 0) / sessions.length : 0;
+          const label = avg >= 2.5 ? 'Alta' : avg >= 1.5 ? 'Media' : avg > 0 ? 'Baja' : '—';
+          const color = avg >= 2.5 ? 'var(--rose)' : avg >= 1.5 ? 'var(--amber)' : avg > 0 ? 'var(--green)' : 'var(--text-3)';
+          const svg = avg >= 2.5 ? '#D46A7E' : avg >= 1.5 ? '#E8A84C' : avg > 0 ? '#4AB88A' : '#ccc';
+          return `
+            <div class="card card-pad cursor-pointer" onclick="mostrarDetalleCarga('${day}')" style="border-left:4px solid ${color}">
+              <div class="flex-between">
+                <div class="flex-center gap-10">
+                  <div style="width:36px;height:36px;border-radius:8px;background:${svg};display:flex;align-items:center;justify-content:center">
+                    <span class="fs-12 fw-600" style="color:#fff">${day.slice(0,2)}</span>
+                  </div>
+                  <div>
+                    <div class="fs-13 fw-500">${day}</div>
+                    <div class="fs-11 text-3">${sessions.length} sesión${sessions.length !== 1 ? 'es' : ''}</div>
+                  </div>
+                </div>
+                <div class="flex-center gap-8">
+                  <span class="fs-12 fw-600" style="color:${color}">${label}</span>
+                  <span class="fs-10 text-3">${avg > 0 ? avg.toFixed(1) : '—'}</span>
+                  <span class="btn-outline btn-sm">Ver detalle →</span>
+                </div>
+              </div>
+              ${sessions.length > 0 ? `
+              <div class="flex gap-3 mt-6">
+                ${sessions.map(s => `<div style="flex:1;height:6px;border-radius:3px;background:${s.intensidad === 'alta' ? '#D46A7E' : s.intensidad === 'media' ? '#E8A84C' : '#4AB88A'}"></div>`).join('')}
+              </div>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Weekly average
+      const allWeekAvg = weekSessions.length > 0 ? weekSessions.reduce((a,s) => a + (intensidadNum[s.intensidad] || 0), 0) / weekSessions.length : 0;
+      const weekLabel = allWeekAvg >= 2.5 ? 'Alta' : allWeekAvg >= 1.5 ? 'Media' : allWeekAvg > 0 ? 'Baja' : '—';
+      document.getElementById('carga-prom-semanal').textContent = allWeekAvg > 0 ? weekLabel + ' (' + allWeekAvg.toFixed(1) + ')' : '—';
+
+      // Monthly average (last 30 days)
+      const now = new Date();
+      const monthStart = new Date(now);
+      monthStart.setDate(now.getDate() - 30);
+      monthStart.setHours(0,0,0,0);
+      const monthSessions = ses.filter(s => s.date >= monthStart && s.date <= new Date());
+      const monthAvg = monthSessions.length > 0 ? monthSessions.reduce((a,s) => a + (intensidadNum[s.intensidad] || 0), 0) / monthSessions.length : 0;
+      const monthLabel = monthAvg >= 2.5 ? 'Alta' : monthAvg >= 1.5 ? 'Media' : monthAvg > 0 ? 'Baja' : '—';
+      document.getElementById('carga-prom-mensual').textContent = monthAvg > 0 ? monthLabel + ' (' + monthAvg.toFixed(1) + ')' : '—';
+
+      // Check-in
+      try {
+        const carga = await get('/klinos/carga');
+        if (carga) {
+          document.getElementById('carga-checkin').textContent = carga.estado || '—';
+          document.getElementById('carga-checkin-sub').textContent = carga.fecha || '—';
+        }
+      } catch (e) {}
     } catch (e) { console.error(e); }
   }
+
+  window.mostrarDetalleCarga = function (day) {
+    const byDay = window._cargaByDay || {};
+    const sessions = byDay[day] || [];
+    const card = document.getElementById('carga-detalle-card');
+    const content = document.getElementById('carga-detalle-content');
+    if (!card || !content) return;
+    const intensidadNum = { baja: 1, media: 2, alta: 3 };
+    const avg = sessions.length > 0 ? sessions.reduce((a,s) => a + (intensidadNum[s.intensidad] || 0), 0) / sessions.length : 0;
+    const label = avg >= 2.5 ? 'Alta' : avg >= 1.5 ? 'Media' : 'Baja';
+    const intensidadMap = { baja: 'Baja', media: 'Media', alta: 'Alta' };
+    content.innerHTML = `
+      <div class="flex-between mb-10">
+        <div class="lora fs-16">${day}</div>
+        <div class="flex-center gap-6">
+          <span class="fs-11 text-3">Promedio:</span>
+          <span class="ses-intensidad ${label.toLowerCase()}">${label} (${avg.toFixed(1)})</span>
+        </div>
+      </div>
+      ${sessions.map(s => `
+        <div class="t-line">
+          <div class="t-dot" style="background:${s.intensidad === 'alta' ? '#D46A7E' : s.intensidad === 'media' ? '#E8A84C' : '#4AB88A'}"></div>
+          <span class="t-date">${s.fecha} ${s.hora}</span>
+          <div class="flex-1">
+            <div class="fs-11 text-2">${s.paciente} · ${s.tipo_sesion}</div>
+            ${s.analisis ? `<div class="fs-10 text-3 mt-2">${s.analisis}</div>` : ''}
+          </div>
+          <span class="fs-11 fw-500" style="color:${s.intensidad === 'alta' ? '#D46A7E' : s.intensidad === 'media' ? '#E8A84C' : '#4AB88A'}">${intensidadMap[s.intensidad] || '—'}</span>
+        </div>
+      `).join('')}
+    `;
+    card.style.display = 'block';
+  };
 
   // ─── Load: Terapeutas ───
   async function loadTerapeutas() {

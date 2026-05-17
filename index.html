@@ -380,55 +380,21 @@
 
         <!-- ══════ CARGA EMOCIONAL ══════ -->
         <div class="panel" id="p-carga">
-          <div class="alert alert-amber">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L15 14H1L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
-            <span>Esta semana tienes 4 sesiones de alta intensidad. Considera reservar un espacio de autocuidado el viernes por la tarde.</span>
+          <div class="stats-grid-3" id="carga-stats">
+            <div class="stat"><div class="stat-label">Promedio semanal</div><div class="stat-val" id="carga-prom-semanal">—</div><div class="stat-sub">esta semana</div></div>
+            <div class="stat"><div class="stat-label">Promedio mensual</div><div class="stat-val" id="carga-prom-mensual">—</div><div class="stat-sub">últimos 30 días</div></div>
+            <div class="stat"><div class="stat-label">Check-in hoy</div><div class="stat-val" style="color:var(--green)" id="carga-checkin">—</div><div class="stat-sub" id="carga-checkin-sub">—</div></div>
           </div>
 
-          <div class="stats-grid-3">
-            <div class="stat"><div class="stat-label">Sesiones esta semana</div><div class="stat-val" data-carga="sesiones">8</div><div class="stat-sub">esta semana</div></div>
-            <div class="stat"><div class="stat-label">Alta intensidad</div><div class="stat-val" data-carga="alta">4</div><div class="stat-sub">del total semanal</div></div>
-            <div class="stat"><div class="stat-label">Check-in hoy</div><div class="stat-val" style="color:var(--sage)">Bien</div><div class="stat-sub">Registrado 08:30</div></div>
-          </div>
+          <div class="sec-lbl">Carga por día — semana actual</div>
+          <div class="flex-col gap-6" id="carga-dias"></div>
 
-          <div class="grid-2">
-            <div class="card card-pad">
-              <div class="card-title">Nivel de carga estimada — semana</div>
-              <div class="flex-center gap-14 mt-6">
-                <div class="gauge-bar flex-1"><div class="gauge-pin" style="left:62%"></div></div>
-                <div class="fs-14 fw-500" style="color:var(--amber);white-space:nowrap">Media-alta</div>
-              </div>
-              <div class="flex-between fs-10 text-3 mt-5"><span>Baja</span><span>Media</span><span>Alta</span></div>
-              <div class="fs-11 text-2 mt-10" style="padding:8px;background:var(--amber-light);border-radius:7px">Nivel Media-alta: considera no agendar nuevos pacientes intensivos esta semana.</div>
-            </div>
-
-            <div class="card card-pad">
-              <div class="card-title">Check-in personal de hoy</div>
-              <div class="fs-12 text-2 mb-10">¿Cómo llegás a la jornada de hoy?</div>
-              <div class="flex gap-6 flex-wrap mb-10">
-                <button class="btn-outline btn-sm">😓 Agotada</button>
-                <button class="btn-primary btn-sm">😊 Bien</button>
-                <button class="btn-outline btn-sm">😄 Muy bien</button>
-              </div>
-              <div class="fs-11 text-3">Nota opcional:</div>
-              <textarea class="mt-4" style="font-size:11px" rows="2" placeholder="¿Algo que quieras registrar sobre tu estado hoy?"></textarea>
-            </div>
-          </div>
-
-          <div class="card card-pad">
-            <div class="card-title">Intensidad de sesiones por día — semana actual</div>
-            <div class="hm">
-              <div class="hm-col"><div class="hm-cell" style="background:#A8CBBA"></div><div class="hm-cell" style="background:#C0DD97"></div><div class="hm-lbl">Lun</div></div>
-              <div class="hm-col"><div class="hm-cell" style="background:#FDF0DC"></div><div class="hm-cell" style="background:#E8B86D"></div><div class="hm-lbl">Mar</div></div>
-              <div class="hm-col"><div class="hm-cell" style="background:#DFF0E8"></div><div class="hm-cell" style="background:#FBEDEF"></div><div class="hm-lbl">Mié</div></div>
-              <div class="hm-col"><div class="hm-cell" style="background:#DCA0AA"></div><div class="hm-cell" style="background:#DCA0AA"></div><div class="hm-lbl">Jue</div></div>
-              <div class="hm-col"><div class="hm-cell" style="background:#DFF0E8"></div><div class="hm-cell" style="background:#A8CBBA"></div><div class="hm-lbl">Vie</div></div>
-            </div>
-            <div class="flex gap-12 mt-12 flex-wrap">
-              <div class="flex-center gap-4 fs-10 text-3"><div style="width:10px;height:10px;border-radius:2px;background:#A8CBBA"></div>Baja</div>
-              <div class="flex-center gap-4 fs-10 text-3"><div style="width:10px;height:10px;border-radius:2px;background:#E8B86D"></div>Media</div>
-              <div class="flex-center gap-4 fs-10 text-3"><div style="width:10px;height:10px;border-radius:2px;background:#DCA0AA"></div>Alta</div>
-            </div>
+          <div class="card card-pad" id="carga-detalle-card" style="display:none">
+            <button class="back-btn" onclick="document.getElementById('carga-detalle-card').style.display='none'">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 12L6 8l4-4"/></svg>
+              Volver a días
+            </button>
+            <div id="carga-detalle-content"></div>
           </div>
         </div>
 
