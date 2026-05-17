@@ -1451,7 +1451,7 @@
     // Find selected paciente
     const select = document.getElementById('chat-paciente');
     const pacienteId = parseInt(select?.value || '0');
-    const input = document.getElementById('chat-paciente-input');
+    const pacInput = document.getElementById('chat-paciente-input');
     const suggestions = document.getElementById('paciente-suggestions');
     if (suggestions) suggestions.style.display = 'none';
     try {
