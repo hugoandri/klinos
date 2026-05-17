@@ -147,6 +147,25 @@ def sesiones_por_terapeuta(terapeuta_id: int, db: Session = Depends(get_db)):
     return result
 
 
+@router.get("/sesiones/paciente/{paciente_id}")
+def sesiones_por_paciente(paciente_id: int, db: Session = Depends(get_db)):
+    from models import Cita
+    citas = db.query(Cita).filter(Cita.paciente_id == paciente_id).all()
+    result = []
+    for c in citas:
+        reg = db.query(RegistroSesion).filter(RegistroSesion.cita_id == c.id).first()
+        result.append({
+            "id": c.id,
+            "fecha": c.fecha,
+            "hora": c.hora,
+            "tipo_sesion": c.tipo_sesion,
+            "intensidad": reg.intensidad if reg and reg.intensidad else None,
+            "analisis": reg.analisis if reg and reg.analisis else None,
+            "sesion_estado": reg.estado if reg else "pendiente",
+        })
+    return result
+
+
 @router.get("/sesiones/terapeuta/by-name/{nombre}")
 def sesiones_por_nombre(nombre: str, db: Session = Depends(get_db)):
     from models import Cita, Terapeuta

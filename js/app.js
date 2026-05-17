@@ -339,13 +339,18 @@
   // ─── Load: Paciente detail ───
   async function loadPacienteDetail(id) {
     try {
-      const [p, notas, patrones, preparaciones, historial] = await Promise.all([
+      const [p, notas, patrones, preparaciones, historial, sesionesIntensidad] = await Promise.all([
         get('/pacientes/' + id),
         get('/klinos/notas/' + id),
         get('/klinos/patrones/' + id),
         get('/klinos/preparaciones/' + id),
         get('/klinos/historial/' + id),
+        get('/klinos/sesiones/paciente/' + id),
       ]);
+      const sesInt = Array.isArray(sesionesIntensidad) ? sesionesIntensidad.filter(s => s.intensidad) : [];
+      const intensidadNum = { baja: 1, media: 2, alta: 3 };
+      const promIntensidad = sesInt.length > 0 ? (sesInt.reduce((a, s) => a + (intensidadNum[s.intensidad] || 0), 0) / sesInt.length) : 0;
+      const promLabel = promIntensidad >= 2.5 ? 'Alta' : promIntensidad >= 1.5 ? 'Media' : '—';
 
       const el = document.getElementById('pac-detail');
       el.innerHTML = `
@@ -406,6 +411,33 @@
             <span class="badge badge-green">Sin estancamiento</span>
           </div>
         </div>
+
+        ${sesInt.length > 0 ? `
+        <div class="card card-pad">
+          <div class="flex-between mb-8">
+            <div class="card-title" style="margin:0">Intensidad por sesión</div>
+            <div class="flex-center gap-6">
+              <span class="fs-11 text-3">Promedio:</span>
+              <span class="ses-intensidad ${promIntensidad >= 2.5 ? 'alta' : promIntensidad >= 1.5 ? 'media' : 'baja'}">${promLabel}</span>
+            </div>
+          </div>
+          <div class="flex-col gap-4">
+            ${sesInt.map(s => {
+              const colors = { alta: '#D46A7E', media: '#E8A84C', baja: '#4AB88A' };
+              const pct = (intensidadNum[s.intensidad] || 1) / 3 * 100;
+              return `
+                <div class="flex-center gap-8">
+                  <span class="fs-11 text-3 min-w-86">${s.fecha} ${s.hora}</span>
+                  <div style="flex:1;height:16px;background:var(--slate-light);border-radius:8px;overflow:hidden">
+                    <div style="height:100%;width:${pct}%;background:${colors[s.intensidad] || '#4AB88A'};border-radius:8px;transition:width 0.3s"></div>
+                  </div>
+                  <span class="fs-10 fw-500 text-right" style="min-width:36px;color:${colors[s.intensidad] || 'var(--text-3)'}">${s.intensidad}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+        ` : ''}
 
         <div class="card card-pad">
           <div class="card-title">Historial de sesiones</div>
@@ -1524,6 +1556,11 @@
       const msgId = 'chat-' + Date.now();
       log.innerHTML += `<div class="chat-msg chat-ai" id="${msgId}"><strong>Klinós IA:</strong> ${res.reply}<br><div class="flex gap-4 mt-6"><button class="btn-outline btn-sm" onclick="downloadXLSX('${msgId}')">📊 XLSX</button><button class="btn-outline btn-sm" onclick="downloadDOCX('${msgId}')">📄 DOCX</button></div></div>`;
       log.scrollTop = log.scrollHeight;
+      // Auto-show intensity chart if query is about intensity
+      const keywords = ['intensidad', 'gráfico', 'grafico', 'chart', 'intensity', 'baja', 'media', 'alta', 'promedio'];
+      if (keywords.some(k => msg.toLowerCase().includes(k))) {
+        setTimeout(() => mostrarGraficoIntensidad(), 300);
+      }
     } catch (e) {
       log.querySelector('.chat-loading')?.remove();
       log.innerHTML += `<div class="chat-msg chat-ai"><strong>Klinós IA:</strong> Error: ${e.message}</div>`;
