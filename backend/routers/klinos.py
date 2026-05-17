@@ -101,7 +101,7 @@ def chat(data: ChatRequest, db: Session = Depends(get_db)):
         messages.append({"role": "user", "content": data.message})
 
         completion = client.chat.completions.create(
-            model="mixtral-8x7b-32768",
+            model="llama-3.1-8b-instant",
             messages=messages,
             max_tokens=1024,
             temperature=0.7,
@@ -198,7 +198,7 @@ def cerrar_sesion(registro_id: int, db: Session = Depends(get_db)):
             try:
                 client = Groq(api_key=api_key)
                 completion = client.chat.completions.create(
-                    model="mixtral-8x7b-32768",
+                    model="llama-3.1-8b-instant",
                     messages=[
                         {"role": "system", "content": "Eres un analista clínico. Analiza las notas de sesión de un terapeuta y proporciona: 1) Un breve resumen/conclusión de la sesión (2-3 líneas). 2) Una calificación de intensidad para el TERAPEUTA (baja, media, alta) basada en el contenido emocional y la complejidad del caso. 3) Una lista de recomendaciones clínicas específicas para las próximas sesiones. 4) Una lista de posibles patologías o problemas psicológicos que podrían estar presentes basada en las notas. Responde SOLO con el siguiente formato exacto:\n\nCONCLUSIÓN: ...\nINTENSIDAD: baja|media|alta\nRECOMENDACIONES:\n- ...\n- ...\nPATOLOGÍAS POSIBLES:\n- ...\n- ..."},
                         {"role": "user", "content": f"Notas de la sesión:\n{reg.notas}"},
