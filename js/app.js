@@ -1094,6 +1094,10 @@
 
   // ─── Init ───
   async function init() {
+    // Apply dark mode before login if previously set
+    if (localStorage.getItem('klinos_dark') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
     // Check for saved session
     const savedUser = localStorage.getItem('klinos_user');
     if (token && savedUser) {
