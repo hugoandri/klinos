@@ -89,12 +89,20 @@ def chat(data: ChatRequest, db: Session = Depends(get_db)):
             p = db.query(Paciente).filter(Paciente.id == data.paciente_id).first()
             if p:
                 notas = db.query(NotaClinica).filter(NotaClinica.paciente_id == data.paciente_id).order_by(NotaClinica.created_at.desc()).limit(3).all()
-                notas_text = "\n".join(f"- {n.contenido}" for n in notas)
-                context = f"Contexto del paciente {p.nombre} (diagnóstico: {p.diagnostico or 'N/A'}, sesiones: {p.sesiones_total}):\n{notas_text}"
+                patrones = db.query(PatronKlinos).filter(PatronKlinos.paciente_id == data.paciente_id).all()
+                notas_text = "\n".join(f"- {n.contenido}" for n in notas) if notas else "Sin notas recientes."
+                patrones_text = ", ".join(f"{pat.patron} (x{pat.frecuencia})" for pat in patrones) if patrones else "Ninguno aún."
+                context = (
+                    f"Datos del paciente: {p.nombre}, {p.edad} años, {p.rut or ''}.\n"
+                    f"Diagnóstico: {p.diagnostico or 'En exploración'}.\n"
+                    f"Estado: {p.status} · Sesiones totales: {p.sesiones_total}.\n"
+                    f"Patrones detectados: {patrones_text}.\n"
+                    f"Últimas notas clínicas:\n{notas_text}"
+                )
 
         client = Groq(api_key=api_key)
         messages = [
-            {"role": "system", "content": "Eres Klinós IA, un asistente clínico experto en psicología y salud mental. Respondes en español, con lenguaje claro y profesional. Ayudas a terapeutas a reflexionar sobre sus casos.\n\nReglas de formato:\n- Usá tablas (markdown) para comparar opciones, resumir información o mostrar progreso.\n- Usá listas con viñetas para ideas clave.\n- Dividí la respuesta en secciones con títulos breves.\n- Mantené cada sección concisa (máximo 3-4 líneas).\n- Evitá párrafos largos. Preferí estructura visual clara.\n- Si das recomendaciones, enumeralas.\n- Si mencionás diagnósticos o patrones, agrupalos en tablas con frecuencia o relevancia."},
+            {"role": "system", "content": "Eres Klinós IA, un asistente clínico experto en psicología y salud mental. Respondes en español, con lenguaje claro y directo.\n\nREGLAS ESTRICTAS:\n1. NO incluyas campos sin información. Si no hay datos, simplemente omitilos.\n2. NO uses '[no proporcionada]', 'N/A', 'no disponible' ni placeholders similares.\n3. Respondé de forma natural y conversacional, no como plantilla.\n4. Usá listas con viñetas para ideas clave. Tablas solo cuando haya datos comparables.\n5. Dividí en secciones con títulos breves si es necesario, pero sin forzar estructura.\n6. Priorizá ser útil y concreto antes que exhaustivo."},
         ]
         if context:
             messages.append({"role": "system", "content": context})
