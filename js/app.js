@@ -526,7 +526,10 @@
       if (select) {
         const allOpts = pacientes.map(p => `<option value="${p.id}" data-search="${(p.nombre + ' ' + (p.rut || '')).toLowerCase()}">${p.nombre} ${p.rut ? `<${p.rut}>` : ''}</option>`).join('');
         select.innerHTML = '<option value="0" data-search="">Sin contexto de paciente</option>' + allOpts;
-        filterPacientes();
+      }
+      const input = document.getElementById('chat-paciente-input');
+      if (input) {
+        window._pacientesData = pacientes;
       }
     } catch (e) { console.error(e); }
   }
@@ -1373,16 +1376,43 @@
 
   // ─── Groq / Klinós Chat ───
   window.filterPacientes = function () {
-    const q = (document.getElementById('chat-paciente-search').value || '').toLowerCase();
-    const select = document.getElementById('chat-paciente');
-    Array.from(select.options).forEach(opt => {
-      const match = (opt.dataset.search || '').includes(q);
-      opt.style.display = match ? '' : 'none';
-    });
-    if (select.selectedOptions[0]?.style.display === 'none') {
-      select.value = '0';
+    const input = document.getElementById('chat-paciente-input');
+    if (!input) return;
+    const q = (input.value || '').toLowerCase();
+    const pacientes = window._pacientesData || [];
+    const match = pacientes.filter(p => (p.nombre + ' ' + (p.rut || '')).toLowerCase().includes(q));
+    const list = document.getElementById('paciente-suggestions');
+    if (!list) {
+      const div = document.createElement('div');
+      div.id = 'paciente-suggestions';
+      div.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:999;background:var(--card);border:1px solid var(--border);border-radius:5px;margin-top:2px;max-height:180px;overflow-y:auto;display:none';
+      input.parentElement.appendChild(div);
     }
+    const suggestions = document.getElementById('paciente-suggestions');
+    if (!q) { suggestions.style.display = 'none'; return; }
+    const esc = s => s.replace(/'/g, "\\'");
+    suggestions.innerHTML = '<div class="fs-11 text-3" style="padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s" onclick="selectPaciente(0,\'\')" onmouseover="this.style.background=\'var(--slate-light)\'" onmouseout="this.style.background=\'transparent\'">Sin contexto de paciente</div>' +
+      match.map(p => `<div class="fs-11" style="padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s" onclick="selectPaciente(${p.id},'${esc(p.nombre)}')" onmouseover="this.style.background=\'var(--slate-light)\'" onmouseout="this.style.background=\'transparent\'">${p.nombre} ${p.rut ? '<span class="text-3">' + esc(p.rut) + '</span>' : ''}</div>`).join('');
+    suggestions.style.display = 'block';
   };
+
+  window.selectPaciente = function (id, label) {
+    const input = document.getElementById('chat-paciente-input');
+    const select = document.getElementById('chat-paciente');
+    const pacientes = window._pacientesData || [];
+    const p = id > 0 ? pacientes.find(x => x.id === id) : null;
+    if (input) input.value = p ? p.nombre + (p.rut ? ' <' + p.rut + '>' : '') : '';
+    if (select) select.value = id;
+    const suggestions = document.getElementById('paciente-suggestions');
+    if (suggestions) suggestions.style.display = 'none';
+  };
+
+  document.addEventListener('click', function (e) {
+    const suggestions = document.getElementById('paciente-suggestions');
+    if (suggestions && !e.target.closest('#chat-paciente-input') && !e.target.closest('#paciente-suggestions')) {
+      suggestions.style.display = 'none';
+    }
+  });
 
   window.downloadXLSX = function (msgId) {
     const el = document.getElementById(msgId);
@@ -1421,6 +1451,9 @@
     // Find selected paciente
     const select = document.getElementById('chat-paciente');
     const pacienteId = parseInt(select?.value || '0');
+    const input = document.getElementById('chat-paciente-input');
+    const suggestions = document.getElementById('paciente-suggestions');
+    if (suggestions) suggestions.style.display = 'none';
     try {
       const res = await post('/klinos/chat', { message: msg, paciente_id: pacienteId });
       log.querySelector('.chat-loading')?.remove();

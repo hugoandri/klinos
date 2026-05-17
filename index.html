@@ -341,9 +341,9 @@
             <div class="card-pad" style="border-bottom:1px solid var(--border)">
               <div class="flex-between">
                 <div class="card-title" style="margin:0">Klinós IA — Asistente Clínico</div>
-                <div class="flex-col gap-3">
-                  <input id="chat-paciente-search" type="text" placeholder="Buscar paciente..." style="width:200px;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);outline:none" oninput="filterPacientes()">
-                  <select id="chat-paciente" style="width:200px;font-size:11px">
+                <div style="position:relative;width:200px">
+                  <input id="chat-paciente-input" type="text" placeholder="Buscar paciente..." style="width:100%;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);outline:none" oninput="filterPacientes()" autocomplete="off">
+                  <select id="chat-paciente" style="display:none">
                     <option value="0">Sin contexto de paciente</option>
                   </select>
                 </div>
