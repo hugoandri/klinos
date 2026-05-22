@@ -14,11 +14,25 @@ class TerapeutaBase(BaseModel):
 
 
 class TerapeutaCreate(TerapeutaBase):
-    pass
+    username: str = ""
+    password: str = ""
+    user_rol: str = "terapeuta"
+    user_id: Optional[int] = None
 
 
 class TerapeutaOut(TerapeutaBase):
     id: int
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TerapeutaPerfilOut(TerapeutaBase):
+    id: int
+    user_id: Optional[int] = None
+    username: Optional[str] = None
+    user_rol: Optional[str] = None
     created_at: Optional[datetime] = None
 
     class Config:

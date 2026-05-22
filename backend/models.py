@@ -16,10 +16,12 @@ class Terapeuta(Base):
     especialidad: Mapped[str] = mapped_column(String(200), default="")
     horario: Mapped[str] = mapped_column(String(100), default="")
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     pacientes: Mapped[list["Paciente"]] = relationship("Paciente", back_populates="terapeuta")
     citas: Mapped[list["Cita"]] = relationship("Cita", back_populates="terapeuta")
+    user: Mapped["User | None"] = relationship("User", back_populates="terapeuta", foreign_keys="Terapeuta.user_id")
 
 
 class Paciente(Base):
@@ -195,6 +197,8 @@ class User(Base):
     auth_token: Mapped[str] = mapped_column(String(200), default="")
     permissions: Mapped[str] = mapped_column(Text, default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+
+    terapeuta: Mapped["Terapeuta | None"] = relationship("Terapeuta", back_populates="user", foreign_keys="Terapeuta.user_id")
 
 
 # ─── Configuracion ───

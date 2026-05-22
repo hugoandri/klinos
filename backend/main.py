@@ -13,7 +13,6 @@ from routers import (
     eventos,
     finanzas,
     klinos,
-    miembros,
     pacientes,
     terapeutas,
     terapias,
@@ -35,7 +34,6 @@ app.include_router(citas.router)
 app.include_router(finanzas.router)
 app.include_router(eventos.router)
 app.include_router(cursos.router)
-app.include_router(miembros.router)
 app.include_router(klinos.router)
 app.include_router(terapias.router)
 

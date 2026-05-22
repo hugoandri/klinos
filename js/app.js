@@ -55,8 +55,11 @@
       loadDashboard();
       loadPacientesList();
       loadConfig();
+      startClock();
       applyDarkMode();
       applyThemeColor();
+      applyFontSize();
+      applyFontFamily();
     } catch (e) {
       errEl.style.display = 'block';
     }
@@ -91,7 +94,7 @@
     pacientes: 'p-pacientes', historial: 'p-historial', sesiones: 'p-sesiones',
     klinos: 'p-klinos',
     carga: 'p-carga', terapeutas: 'p-terapeutas', eventos: 'p-eventos',
-    cursos: 'p-cursos', miembros: 'p-miembros', finanzas: 'p-finanzas',
+    cursos: 'p-cursos', finanzas: 'p-finanzas',
     terapias: 'p-terapias',
     configuracion: 'p-configuracion',
   };
@@ -100,7 +103,7 @@
     dashboard: 'dashboard', agenda: 'agenda', reservar: 'reservar',
     pacientes: 'pacientes', terapeutas: 'terapeutas',
     citas: 'citas', finanzas: 'finanzas',
-    eventos: 'eventos', cursos: 'cursos', miembros: 'miembros',
+    eventos: 'eventos', cursos: 'cursos',
     sesiones: 'klinos', klinos: 'klinos', configuracion: 'config',
     historial: 'historial', carga: 'carga', terapias: 'config',
   };
@@ -141,8 +144,8 @@
     pacientes: 'Pacientes', historial: 'Historial de Citas',
     sesiones: 'Sesiones · Klinós',
     klinos: 'Memoria Clínica · Klinós', carga: 'Carga Emocional del Terapeuta',
-    terapeutas: 'Terapeutas', eventos: 'Eventos', cursos: 'Cursos',
-    miembros: 'Miembros', finanzas: 'Finanzas', terapias: 'Terapias',
+    terapeutas: 'Gestión de usuarios', eventos: 'Eventos', cursos: 'Cursos',
+    finanzas: 'Finanzas', terapias: 'Terapias',
     configuracion: 'Configuración',
   };
 
@@ -161,13 +164,12 @@
     if (id === 'historial') loadHistorial();
     if (id === 'klinos') loadKlinos();
     if (id === 'carga') loadCarga();
-    if (id === 'terapeutas') loadTerapeutas();
+    if (id === 'terapeutas') switchTerapeutaTab('usuarios');
     if (id === 'eventos') loadEventos();
     if (id === 'cursos') loadCursos();
-    if (id === 'miembros') loadMiembros();
     if (id === 'finanzas') loadFinanzas();
     if (id === 'terapias') loadTerapias();
-    if (id === 'configuracion') { loadConfig(); applyDarkMode(); applyThemeColor(); applyFontSize(); loadUsers(); }
+    if (id === 'configuracion') { loadConfig(); applyDarkMode(); applyThemeColor(); applyFontSize(); applyFontFamily(); }
     if (id === 'reservar') loadTipoSesionOptions();
   };
 
@@ -213,6 +215,20 @@
     const toggle = document.getElementById('dark-toggle');
     if (toggle) toggle.classList.toggle('active', isDark);
   };
+
+  function startClock() {
+    function tick() {
+      const el = document.getElementById('topbar-clock');
+      if (!el) return;
+      const now = new Date();
+      const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      const p = function(n){return n.toString().padStart(2,'0')};
+      el.textContent = dias[now.getDay()] + ' ' + now.getDate() + ', ' + meses[now.getMonth()] + ' ' + now.getFullYear() + ' · ' + p(now.getHours()) + ':' + p(now.getMinutes()) + ':' + p(now.getSeconds());
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
 
   // ─── Patient detail state ───
   window.showDetail = function (id) {
@@ -588,6 +604,26 @@
     return { start, end };
   }
 
+  let _cargaVista = 'semana';
+  let _cargaOffset = 0;
+
+  function rangeFechas(vista, offset) {
+    const now = new Date();
+    if (vista === 'mes') {
+      const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+      return { start, end, label: start.toLocaleDateString('es', { month: 'long', year: 'numeric' }) };
+    }
+    const ref = new Date(now.getTime() + offset * 7 * 86400000);
+    const start = new Date(ref);
+    start.setDate(ref.getDate() - ref.getDay() + 1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const fmt = d => d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+    return { start, end, label: fmt(start) + ' – ' + fmt(end) };
+  }
+
   async function loadCarga() {
     try {
       const terapeutas = await get('/terapeutas');
@@ -597,37 +633,51 @@
         allSessions.push(...ss);
       }
       const intensidadNum = { baja: 1, media: 2, alta: 3 };
-      const numInt = { 1: 'baja', 2: 'media', 3: 'alta' };
       const ses = allSessions.filter(s => s.intensidad && s.sesion_estado === 'cerrada').map(s => ({ ...s, date: parseFecha(s.fecha) })).filter(s => s.date);
 
-      // Weekly: group by day
-      const week = semanaActual();
-      const weekSessions = ses.filter(s => s.date >= week.start && s.date <= week.end);
+      const range = rangeFechas(_cargaVista, _cargaOffset);
+      document.getElementById('carga-periodo-actual').textContent = range.label;
+      document.getElementById('carga-periodo-lbl').textContent = _cargaVista === 'mes' ? 'Carga por día — ' + range.label : 'Carga por día — semana';
+
+      const filtered = ses.filter(s => s.date >= range.start && s.date <= range.end);
       const byDay = {};
-      weekSessions.forEach(s => {
-        const day = nombreDia(s.date);
-        if (!byDay[day]) byDay[day] = [];
-        byDay[day].push(s);
+      filtered.forEach(s => {
+        const key = _cargaVista === 'mes' ? s.date.getDate().toString() : nombreDia(s.date);
+        if (!byDay[key]) byDay[key] = [];
+        byDay[key].push(s);
       });
       window._cargaByDay = byDay;
-      const daysOrder = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+      window._cargaVistaActual = _cargaVista;
+
+      const keys = _cargaVista === 'mes'
+        ? Array.from({ length: range.end.getDate() }, (_, i) => (i + 1).toString())
+        : ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+      const dayColors = {
+        'Lunes': '#3B7DBF', 'Martes': '#D4893B', 'Miércoles': '#6C5CE7',
+        'Jueves': '#C25A6E', 'Viernes': '#3E8E6B', 'Sábado': '#A855F7', 'Domingo': '#E8793B'
+      };
+
       const diasEl = document.getElementById('carga-dias');
       if (diasEl) {
-        diasEl.innerHTML = daysOrder.map(day => {
-          const sessions = byDay[day] || [];
+        diasEl.innerHTML = keys.map(key => {
+          const sessions = byDay[key] || [];
           const avg = sessions.length > 0 ? sessions.reduce((a, s) => a + (intensidadNum[s.intensidad] || 0), 0) / sessions.length : 0;
           const label = avg >= 2.5 ? 'Alta' : avg >= 1.5 ? 'Media' : avg > 0 ? 'Baja' : '—';
           const color = avg >= 2.5 ? 'var(--rose)' : avg >= 1.5 ? 'var(--amber)' : avg > 0 ? 'var(--green)' : 'var(--text-3)';
-          const svg = avg >= 2.5 ? '#D46A7E' : avg >= 1.5 ? '#E8A84C' : avg > 0 ? '#4AB88A' : '#ccc';
+          const dayBg = _cargaVista === 'mes'
+            ? (['#3B7DBF','#D4893B','#6C5CE7','#C25A6E','#3E8E6B','#A855F7','#E8793B'][(parseInt(key) - 1) % 7] || '#666')
+            : (dayColors[key] || '#666');
+          const displayKey = _cargaVista === 'mes' ? `${key} ${range.start.toLocaleDateString('es', { month: 'short' })}` : key;
           return `
-            <div class="card card-pad cursor-pointer" onclick="mostrarDetalleCarga('${day}')" style="border-left:4px solid ${color}">
+            <div class="card card-pad cursor-pointer" onclick="mostrarDetalleCarga('${key.replace(/'/g,"\\'")}')" style="border-left:4px solid ${color}">
               <div class="flex-between">
                 <div class="flex-center gap-10">
-                  <div style="width:36px;height:36px;border-radius:8px;background:${svg};display:flex;align-items:center;justify-content:center">
-                    <span class="fs-12 fw-600" style="color:#fff">${day.slice(0,2)}</span>
+                  <div style="width:36px;height:36px;border-radius:8px;background:${dayBg};display:flex;align-items:center;justify-content:center">
+                    <span class="fs-12 fw-600" style="color:#fff">${_cargaVista === 'mes' ? key : key.slice(0,2)}</span>
                   </div>
                   <div>
-                    <div class="fs-13 fw-500">${day}</div>
+                    <div class="fs-13 fw-500">${displayKey}</div>
                     <div class="fs-11 text-3">${sessions.length} sesión${sessions.length !== 1 ? 'es' : ''}</div>
                   </div>
                 </div>
@@ -646,12 +696,13 @@
         }).join('');
       }
 
-      // Weekly average
-      const allWeekAvg = weekSessions.length > 0 ? weekSessions.reduce((a,s) => a + (intensidadNum[s.intensidad] || 0), 0) / weekSessions.length : 0;
-      const weekLabel = allWeekAvg >= 2.5 ? 'Alta' : allWeekAvg >= 1.5 ? 'Media' : allWeekAvg > 0 ? 'Baja' : '—';
-      document.getElementById('carga-prom-semanal').textContent = allWeekAvg > 0 ? weekLabel + ' (' + allWeekAvg.toFixed(1) + ')' : '—';
+      // Averages
+      const allAvg = filtered.length > 0 ? filtered.reduce((a,s) => a + (intensidadNum[s.intensidad] || 0), 0) / filtered.length : 0;
+      const allLabel = allAvg >= 2.5 ? 'Alta' : allAvg >= 1.5 ? 'Media' : allAvg > 0 ? 'Baja' : '—';
+      document.getElementById('carga-prom-semanal').textContent = allAvg > 0 ? allLabel + ' (' + allAvg.toFixed(1) + ')' : '—';
+      document.getElementById('carga-prom-semanal').parentElement.querySelector('.stat-sub').textContent = _cargaVista === 'mes' ? range.label : 'esta semana';
 
-      // Monthly average (last 30 days)
+      // Overall monthly (always from all data)
       const now = new Date();
       const monthStart = new Date(now);
       monthStart.setDate(now.getDate() - 30);
@@ -672,37 +723,71 @@
     } catch (e) { console.error(e); }
   }
 
-  window.mostrarDetalleCarga = function (day) {
-    const byDay = window._cargaByDay || {};
-    const sessions = byDay[day] || [];
-    const card = document.getElementById('carga-detalle-card');
-    const content = document.getElementById('carga-detalle-content');
-    if (!card || !content) return;
-    const intensidadNum = { baja: 1, media: 2, alta: 3 };
-    const avg = sessions.length > 0 ? sessions.reduce((a,s) => a + (intensidadNum[s.intensidad] || 0), 0) / sessions.length : 0;
-    const label = avg >= 2.5 ? 'Alta' : avg >= 1.5 ? 'Media' : 'Baja';
-    const intensidadMap = { baja: 'Baja', media: 'Media', alta: 'Alta' };
-    content.innerHTML = `
-      <div class="flex-between mb-10">
-        <div class="lora fs-16">${day}</div>
-        <div class="flex-center gap-6">
-          <span class="fs-11 text-3">Promedio:</span>
-          <span class="ses-intensidad ${label.toLowerCase()}">${label} (${avg.toFixed(1)})</span>
-        </div>
-      </div>
-      ${sessions.map(s => `
-        <div class="t-line">
-          <div class="t-dot" style="background:${s.intensidad === 'alta' ? '#D46A7E' : s.intensidad === 'media' ? '#E8A84C' : '#4AB88A'}"></div>
-          <span class="t-date">${s.fecha} ${s.hora}</span>
-          <div class="flex-1">
-            <div class="fs-11 text-2">${s.paciente} · ${s.tipo_sesion}</div>
-            ${s.analisis ? `<div class="fs-10 text-3 mt-2">${s.analisis}</div>` : ''}
+  window.mostrarDetalleCarga = function (key) {
+    try {
+      const byDay = window._cargaByDay || {};
+      const sessions = byDay[key] || [];
+      const card = document.getElementById('carga-detalle-card');
+      const content = document.getElementById('carga-detalle-content');
+      if (!card || !content) return;
+      const intensidadNum = { baja: 1, media: 2, alta: 3 };
+      const avg = sessions.length > 0 ? sessions.reduce((a,s) => a + (intensidadNum[s.intensidad] || 0), 0) / sessions.length : 0;
+      const label = avg >= 2.5 ? 'Alta' : avg >= 1.5 ? 'Media' : 'Baja';
+      const intensidadMap = { baja: 'Baja', media: 'Media', alta: 'Alta' };
+      content.innerHTML = sessions.length === 0
+        ? '<div class="fs-11 text-3 text-center" style="padding:40px 20px">📭 Sin sesiones con intensidad en este período.</div>'
+        : `
+        <div class="flex-between mb-10">
+          <div class="lora fs-16">${key}</div>
+          <div class="flex-center gap-6">
+            <span class="fs-11 text-3">Promedio:</span>
+            <span class="ses-intensidad ${label.toLowerCase()}">${label} (${avg.toFixed(1)})</span>
           </div>
-          <span class="fs-11 fw-500" style="color:${s.intensidad === 'alta' ? '#D46A7E' : s.intensidad === 'media' ? '#E8A84C' : '#4AB88A'}">${intensidadMap[s.intensidad] || '—'}</span>
         </div>
-      `).join('')}
-    `;
-    card.style.display = 'block';
+        ${sessions.map(s => `
+          <div class="t-line">
+            <div class="t-dot" style="background:${s.intensidad === 'alta' ? '#D46A7E' : s.intensidad === 'media' ? '#E8A84C' : '#4AB88A'}"></div>
+            <span class="t-date">${s.fecha} ${s.hora}</span>
+            <div class="flex-1">
+              <div class="fs-11 text-2">${s.paciente} · ${s.tipo_sesion}</div>
+              ${s.analisis ? `<div class="fs-10 text-3 mt-2">${s.analisis}</div>` : ''}
+            </div>
+            <span class="fs-11 fw-500" style="color:${s.intensidad === 'alta' ? '#D46A7E' : s.intensidad === 'media' ? '#E8A84C' : '#4AB88A'}">${intensidadMap[s.intensidad] || '—'}</span>
+          </div>
+        `).join('')}`;
+      card.style.display = 'block';
+    } catch (e) { console.error('mostrarDetalleCarga error:', e); }
+  };
+
+  window.cambiarVistaCarga = function (vista) {
+    _cargaVista = vista;
+    _cargaOffset = 0;
+    document.querySelectorAll('#carga-vista-tabs .tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase().includes(vista)));
+    document.getElementById('carga-detalle-card').style.display = 'none';
+    loadCarga();
+  };
+
+  window.navegarCarga = function (dir) {
+    _cargaOffset += dir;
+    document.getElementById('carga-detalle-card').style.display = 'none';
+    loadCarga();
+  };
+
+  // ─── Terapeutas: tab switching ───
+  window.switchTerapeutaTab = function (tab, el) {
+    document.querySelector('#p-terapeutas .tabs .tab.active')?.classList.remove('active');
+    if (el) el.classList.add('active');
+    else {
+      const tabs = document.querySelectorAll('#p-terapeutas .tabs .tab');
+      const idx = { usuarios: 0, terapeutas: 1, invitar: 2 }[tab] || 0;
+      tabs[idx]?.classList.add('active');
+    }
+    document.getElementById('usuarios-content').style.display = tab === 'usuarios' ? '' : 'none';
+    document.getElementById('terapeutas-content').style.display = tab === 'terapeutas' ? '' : 'none';
+    document.getElementById('invitar-content').style.display = tab === 'invitar' ? '' : 'none';
+    if (tab === 'usuarios') loadUsers();
+    else if (tab === 'terapeutas') loadTerapeutas();
+    else { loadPerfiles(); cargarUsuariosInvitar(); }
   };
 
   // ─── Load: Terapeutas ───
@@ -730,78 +815,67 @@
     } catch (e) { console.error(e); }
   }
 
-  // ─── Load: Eventos ───
-  async function loadEventos() {
+  // ─── Load: Perfiles (tab Invitar) ───
+  async function loadPerfiles() {
     try {
-      const eventos = await get('/eventos');
-      const el = document.getElementById('eventos-list');
+      const perfiles = await get('/terapeutas/perfiles');
+      const el = document.getElementById('perfiles-table-body');
       if (!el) return;
-      el.innerHTML = eventos.map(e => `
-        <div class="ev-card">
-          <div class="lora fs-14">${e.nombre}</div>
-          <div class="fs-11 text-3">${e.descripcion}</div>
-          <div class="ev-chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M1 6h14"/></svg>${e.fecha_inicio} – ${e.fecha_fin}</div>
-          <div class="ev-chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2C5.2 2 3 4.2 3 7c0 4.5 5 9 5 9s5-4.5 5-9c0-2.8-2.2-5-5-5z"/></svg>${e.ubicacion}</div>
-          <div class="flex gap-12 fs-11 text-3"><span>${e.terapeutas_count} terapeutas</span><span>${e.citas_count} citas registradas</span></div>
-          <button class="btn-outline btn-sm self-start">Gestionar →</button>
-        </div>
-      `).join('');
-    } catch (e) { console.error(e); }
-  }
-
-  // ─── Load: Cursos ───
-  async function loadCursos() {
-    try {
-      const cursos = await get('/cursos');
-      const el = document.getElementById('cursos-list');
-      if (!el) return;
-      const tagColors = { Mensual: 'var(--green-light)', 'Pago único': 'var(--blue-light)' };
-      const tagTextColors = { Mensual: 'var(--green)', 'Pago único': 'var(--blue)' };
-      el.innerHTML = cursos.map(c => `
-        <div class="course-card">
-          <div class="flex-between" style="align-items:flex-start;margin-bottom:8px">
-            <div class="lora fs-14">${c.nombre}</div>
-            <span class="course-tag" style="background:${tagColors[c.tipo_pago] || 'var(--green-light)'};color:${tagTextColors[c.tipo_pago] || 'var(--green)'}">${c.tag}</span>
-          </div>
-          <div class="fs-11 text-3 lh-18">
-            <div><strong class="text-2">Tipo:</strong> ${c.tipo}</div>
-            <div><strong class="text-2">Profesor:</strong> ${c.profesor}</div>
-            <div><strong class="text-2">Horario:</strong> ${c.horario}</div>
-            <div><strong class="text-2">Monto:</strong> ${c.monto}</div>
-            <div><strong class="text-2">Inscritos:</strong> ${c.alumnos} alumnos</div>
-          </div>
-          <div class="flex gap-6 mt-10">
-            <button class="btn-outline btn-sm flex-1">Ver detalle</button>
-            <button class="btn-danger btn-sm">Eliminar</button>
-          </div>
-        </div>
-      `).join('');
-    } catch (e) { console.error(e); }
-  }
-
-  // ─── Load: Miembros ───
-  async function loadMiembros() {
-    try {
-      const miembros = await get('/miembros');
-      const el = document.getElementById('miembros-table-body');
-      if (!el) return;
-      const roleColors = { Admin: 'badge-blue', Terapeuta: 'badge-green', Recepción: 'badge-amber' };
-      el.innerHTML = miembros.map(m => `
+      const roleLabels = { admin: 'Administrador', terapeuta: 'Terapeuta', recepcion: 'Recepción' };
+      const roleColors = { admin: 'badge-blue', terapeuta: 'badge-green', recepcion: 'badge-amber' };
+      el.innerHTML = perfiles.map(p => `
         <tr>
-          <td><div class="flex-center gap-8"><div class="av av-xs ${avatarClass(m.avatar_color)}">${initials(m.nombre)}</div>${m.nombre}</div></td>
-          <td>${m.email}</td>
-          <td><span class="badge ${roleColors[m.rol] || 'badge-gray'}">${m.rol}</span></td>
-          <td class="text-3">${m.fecha_ingreso}</td>
-          <td><button class="btn-danger btn-sm" onclick="removeMember(${m.id})">Eliminar</button></td>
+          <td><div class="flex-center gap-8"><div class="av av-xs av-blue">${initials(p.nombre)}</div>${p.nombre}</div></td>
+          <td>${p.email}</td>
+          <td>${p.username || '<span class="text-3 fs-11">—</span>'}</td>
+          <td>${p.user_rol ? `<span class="badge ${roleColors[p.user_rol] || 'badge-gray'}">${roleLabels[p.user_rol] || p.user_rol}</span>` : '<span class="text-3 fs-11">Sin perfil</span>'}</td>
+          <td><button class="btn-danger btn-sm" style="border-radius:20px;padding:5px 12px" onclick="eliminarPerfil(${p.id})">Eliminar</button></td>
         </tr>
       `).join('');
     } catch (e) { console.error(e); }
   }
 
-  window.removeMember = async function (id) {
-    if (!confirm('¿Eliminar miembro?')) return;
-    await del('/miembros/' + id);
-    loadMiembros();
+  // ─── Cargar usuarios en dropdown de Invitar ───
+  async function cargarUsuariosInvitar() {
+    try {
+      const users = await get('/auth/users');
+      const perfiles = await get('/terapeutas/perfiles');
+      const terapeutaUserIds = new Set(perfiles.filter(p => p.user_id).map(p => p.user_id));
+      const elegibles = users.filter(u => !terapeutaUserIds.has(u.id));
+      const sel = document.getElementById('inv-user-select');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">— Selecciona un usuario —</option>'
+        + elegibles.map(u => `<option value="${u.id}" data-email="${u.email}" data-nombre="${u.nombre}" data-rol="${u.rol}">${u.nombre} (@${u.username})</option>`).join('');
+      sel.onchange = function () {
+        const opt = sel.options[sel.selectedIndex];
+        document.getElementById('inv-email').value = opt?.dataset?.email || '';
+      };
+    } catch (e) { console.error(e); }
+  }
+
+  window.invitarEspecialista = async function () {
+    const sel = document.getElementById('inv-user-select');
+    const userId = sel.value;
+    const password = document.getElementById('inv-password').value;
+    if (!userId) return showToast('Selecciona un usuario', 'error');
+    if (!password || password.length < 4) return showToast('La contraseña debe tener al menos 4 caracteres', 'error');
+    const opt = sel.options[sel.selectedIndex];
+    const nombre = opt.dataset.nombre;
+    const email = opt.dataset.email;
+    const user_rol = opt.dataset.rol;
+    await post('/terapeutas', { nombre, email, telefono: '', especialidad: '', horario: '', activo: true, username: '', password, user_rol, user_id: parseInt(userId) });
+    showToast('Invitación enviada', 'success');
+    document.getElementById('inv-password').value = '';
+    sel.value = '';
+    document.getElementById('inv-email').value = '';
+    loadPerfiles();
+    cargarUsuariosInvitar();
+  };
+
+  window.eliminarPerfil = async function (id) {
+    if (!confirm('¿Eliminar especialista?')) return;
+    await del('/terapeutas/' + id);
+    loadPerfiles();
   };
 
   // ─── Load: Finanzas ───
@@ -1095,23 +1169,17 @@
   };
 
   // ─── Color picker ───
-  window.cambiarColorTema = function (hex) {
-    document.documentElement.style.setProperty('--theme-primary', hex);
-    document.getElementById('cfg-color-label').textContent = hex;
-    // Also override green vars for consistency
-    document.documentElement.style.setProperty('--green', hex);
-    // Compute a darker shade for dark variants
-    const r = parseInt(hex.slice(1,3), 16);
-    const g = parseInt(hex.slice(3,5), 16);
-    const b = parseInt(hex.slice(5,7), 16);
-    const darkR = Math.max(0, r - 40);
-    const darkG = Math.max(0, g - 40);
-    const darkB = Math.max(0, b - 40);
-    const darkHex = '#' + [darkR, darkG, darkB].map(x => x.toString(16).padStart(2,'0')).join('');
-    document.documentElement.style.setProperty('--green-dark', darkHex);
-    // Save to config
-    put('/config', { settings: { theme_color: hex } }).catch(() => {});
+  function _setThemeStyle(hex) {
+    let s = document.getElementById('theme-style');
+    if (!s) { s = document.createElement('style'); s.id = 'theme-style'; document.head.appendChild(s); }
+    s.textContent = `.btn-primary,.login-btn,.sb-badge,.progress-fill,.check-done,.dark-toggle-switch.active,.toast-success{background:${hex}!important}.btn-outline:hover,.back-btn:hover,.theme-btn:hover{color:${hex}!important;border-color:${hex}!important}input:focus,.login-overlay input:focus{border-color:${hex}!important}.spinner{border-top-color:${hex}!important}`;
     localStorage.setItem('klinos_theme', hex);
+  }
+
+  window.cambiarColorTema = function (hex) {
+    _setThemeStyle(hex);
+    document.getElementById('cfg-color-label').textContent = hex;
+    put('/config', { settings: { theme_color: hex } }).catch(() => {});
   };
 
   window.cambiarColorSidebar = function (hex) {
@@ -1121,11 +1189,23 @@
     localStorage.setItem('klinos_sidebar', hex);
   };
 
+  async function loadConfig() {
+    try {
+      const cfg = await get('/config');
+      const groqInput = document.getElementById('cfg-groq-key');
+      if (groqInput && cfg.groq_api_key) groqInput.value = cfg.groq_api_key;
+      const clinicInput = document.getElementById('cfg-clinic-name');
+      const name = cfg.clinic_name || localStorage.getItem('klinos_clinic_name') || '';
+      if (clinicInput) clinicInput.value = name;
+      const logo = cfg.clinic_logo || localStorage.getItem('klinos_clinic_logo') || '';
+      _applyClinicData(name, logo);
+    } catch (e) {}
+  }
+
   async function applyThemeColor() {
     const saved = localStorage.getItem('klinos_theme');
     if (saved) {
-      document.documentElement.style.setProperty('--theme-primary', saved);
-      document.documentElement.style.setProperty('--green', saved);
+      _setThemeStyle(saved);
       const picker = document.getElementById('cfg-color');
       if (picker) picker.value = saved;
       const label = document.getElementById('cfg-color-label');
@@ -1135,9 +1215,8 @@
     try {
       const cfg = await get('/config');
       if (cfg.theme_color && cfg.theme_color !== saved) {
+        _setThemeStyle(cfg.theme_color);
         localStorage.setItem('klinos_theme', cfg.theme_color);
-        document.documentElement.style.setProperty('--theme-primary', cfg.theme_color);
-        document.documentElement.style.setProperty('--green', cfg.theme_color);
         const picker = document.getElementById('cfg-color');
         if (picker) picker.value = cfg.theme_color;
         const label = document.getElementById('cfg-color-label');
@@ -1286,19 +1365,51 @@
   window.cambiarFontSize = function (px) {
     const scale = px / 14;
     document.documentElement.style.setProperty('--font-scale', scale);
-    document.getElementById('cfg-font-size-label').textContent = px + 'px';
     localStorage.setItem('klinos_font_size', px);
+    document.querySelectorAll('#cfg-font-sizes .size-chip').forEach(c => c.classList.toggle('active', parseInt(c.dataset.px) === px));
   };
 
   function applyFontSize() {
-    const saved = localStorage.getItem('klinos_font_size');
-    if (saved) {
-      const scale = parseInt(saved) / 14;
-      document.documentElement.style.setProperty('--font-scale', scale);
-      const slider = document.getElementById('cfg-font-size');
-      if (slider) slider.value = saved;
-      const label = document.getElementById('cfg-font-size-label');
-      if (label) label.textContent = saved + 'px';
+    const saved = parseInt(localStorage.getItem('klinos_font_size')) || 14;
+    const sizes = [12, 13, 14, 15, 16, 17, 18, 19, 20];
+    const container = document.getElementById('cfg-font-sizes');
+    if (container) {
+      container.innerHTML = sizes.map(px => `<div class="size-chip${px === saved ? ' active' : ''}" data-px="${px}" onclick="cambiarFontSize(${px})" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border);cursor:pointer;font-size:11px;font-family:var(--font-body);color:var(--text-2);transition:all .15s;background:${px === saved ? 'var(--green)' : 'transparent'};color:${px === saved ? '#fff' : 'var(--text-2)'};font-weight:${px === saved ? '600' : '400'}">${px}</div>`).join('');
+    }
+    const scale = saved / 14;
+    document.documentElement.style.setProperty('--font-scale', scale);
+  }
+
+  // ─── Font family ───
+  const _fontFamilies = {
+    clasico: { label: 'Clásico', body: "'DM Sans', sans-serif", heading: "'Lora', serif" },
+    moderno: { label: 'Moderno', body: "'Inter', sans-serif", heading: "'Playfair Display', serif" },
+    suave: { label: 'Suave', body: "'Nunito', sans-serif", heading: "'DM Serif Display', serif" },
+    serif: { label: 'Serif', body: "'Merriweather', serif", heading: "'Playfair Display', serif" },
+    mono: { label: 'Mono', body: "'JetBrains Mono', monospace", heading: "'DM Sans', sans-serif" },
+  };
+
+  window.cambiarFontFamily = function (key) {
+    const f = _fontFamilies[key];
+    if (!f) return;
+    document.documentElement.style.setProperty('--font-body', f.body);
+    document.documentElement.style.setProperty('--font-heading', f.heading);
+    localStorage.setItem('klinos_font_family', key);
+    applyFontFamily();
+  };
+
+  function applyFontFamily() {
+    const saved = localStorage.getItem('klinos_font_family') || 'clasico';
+    const f = _fontFamilies[saved];
+    if (f) {
+      document.documentElement.style.setProperty('--font-body', f.body);
+      document.documentElement.style.setProperty('--font-heading', f.heading);
+    }
+    const container = document.getElementById('cfg-font-families');
+    if (container) {
+      container.innerHTML = Object.entries(_fontFamilies).map(([key, ff]) =>
+        `<div class="font-chip${key === saved ? ' active' : ''}" data-key="${key}" onclick="cambiarFontFamily('${key}')" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border);cursor:pointer;font-size:11px;font-family:var(--font-body);color:var(--text-2);transition:all .15s;background:${key === saved ? 'var(--green)' : 'transparent'};color:${key === saved ? '#fff' : 'var(--text-2)'};font-weight:${key === saved ? '600' : '400'}">${ff.label}</div>`
+      ).join('');
     }
   }
 
@@ -1356,9 +1467,11 @@
         loadDashboard();
         loadPacientesList();
         loadConfig();
+        startClock();
         applyDarkMode();
         applyThemeColor();
         applyFontSize();
+        applyFontFamily();
         loadTipoSesionOptions();
         return;
       } catch (e) {
@@ -1409,23 +1522,11 @@
       });
     }
 
-    // Invite member
-    const inviteBtn = document.querySelector('#p-miembros .btn-primary');
-    if (inviteBtn) {
-      inviteBtn.addEventListener('click', async function () {
-        const panel = document.getElementById('p-miembros');
-        const email = panel.querySelector('input[type="email"]').value;
-        const rol = panel.querySelector('select').value;
-        if (!email) return showToast('Ingresa un email', 'error');
-        await post('/miembros', {
-          nombre: email.split('@')[0],
-          email: email,
-          rol: rol,
-          fecha_ingreso: new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, ''),
-          avatar_color: ['blue', 'sage', 'rose', 'amber'][Math.floor(Math.random() * 4)],
-        });
-        showToast('Invitación enviada', 'success');
-        loadMiembros();
+    // ─── Nuevo terapeuta ───
+    const btnNuevo = document.getElementById('btn-nuevo-terapeuta');
+    if (btnNuevo) {
+      btnNuevo.addEventListener('click', function () {
+        switchTerapeutaTab('terapeutas', document.querySelectorAll('#p-terapeutas .tabs .tab')[1]);
       });
     }
   }
@@ -1701,6 +1802,93 @@
       showToast('API key guardada', 'success');
     } catch (e) { showToast('Error: ' + e.message, 'error'); }
   };
+
+  // ─── Clinic data ───
+  window.guardarClinica = async function () {
+    const name = document.getElementById('cfg-clinic-name').value.trim();
+    try {
+      await put('/config', { settings: { clinic_name: name } });
+      applyClinicName(name);
+      showToast('Nombre guardado', 'success');
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  };
+
+  function applyClinicName(name) {
+    const el = document.getElementById('sb-clinic-name');
+    const loginEl = document.getElementById('login-clinic-name');
+    if (el) el.textContent = name || 'Klinós';
+    if (loginEl) loginEl.textContent = name || 'Klinós';
+    if (name) localStorage.setItem('klinos_clinic_name', name);
+    else localStorage.removeItem('klinos_clinic_name');
+  }
+
+  window.previewLogo = function (input) {
+    const file = input && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const preview = document.getElementById('cfg-logo-preview');
+      const wrap = document.getElementById('cfg-logo-preview-wrap');
+      if (preview) preview.src = e.target.result;
+      if (wrap) wrap.style.display = '';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.subirLogo = async function () {
+    const fileInput = document.getElementById('cfg-logo-upload');
+    const file = fileInput && fileInput.files[0];
+    if (!file) { showToast('Selecciona una imagen', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+      const dataUrl = e.target.result;
+      try {
+        await put('/config', { settings: { clinic_logo: dataUrl } });
+        applyLogo(dataUrl);
+        showToast('Logo actualizado', 'success');
+      } catch (err) { showToast('Error: ' + err.message, 'error'); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.eliminarLogo = async function () {
+    try {
+      await put('/config', { settings: { clinic_logo: '' } });
+      applyLogo('');
+      showToast('Logo eliminado', 'success');
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  };
+
+  function applyLogo(dataUrl) {
+    const sbImg = document.getElementById('sb-logo-img');
+    const sbIcon = document.getElementById('sb-logo-icon');
+    const loginImg = document.getElementById('login-logo-img');
+    const loginIcon = document.getElementById('login-logo-icon');
+    const previewWrap = document.getElementById('cfg-logo-preview-wrap');
+    const preview = document.getElementById('cfg-logo-preview');
+    if (dataUrl) {
+      if (sbImg) { sbImg.src = dataUrl; sbImg.style.display = ''; }
+      if (sbIcon) sbIcon.style.display = 'none';
+      if (loginImg) { loginImg.src = dataUrl; loginImg.style.display = ''; }
+      if (loginIcon) loginIcon.style.display = 'none';
+      if (preview) { preview.src = dataUrl; }
+      if (previewWrap) previewWrap.style.display = '';
+      localStorage.setItem('klinos_clinic_logo', dataUrl);
+    } else {
+      if (sbImg) { sbImg.src = ''; sbImg.style.display = 'none'; }
+      if (sbIcon) sbIcon.style.display = '';
+      if (loginImg) { loginImg.src = ''; loginImg.style.display = 'none'; }
+      if (loginIcon) loginIcon.style.display = '';
+      if (preview) preview.src = '';
+      if (previewWrap) previewWrap.style.display = 'none';
+      localStorage.removeItem('klinos_clinic_logo');
+    }
+  }
+
+  function _applyClinicData(name, logo) {
+    applyClinicName(name);
+    applyLogo(logo);
+  }
 
   document.addEventListener('DOMContentLoaded', init);
 
